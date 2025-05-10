@@ -1,5 +1,14 @@
 # OdontoClin
 
+A dental clinic management system built with Flask. This application helps manage patient records, treatments, appointments, and financial information for dental clinics.
+
+## Features
+
+- Patient management
+- Treatment planning and tracking
+- User authentication and role-based access
+- Financial tracking for treatments
+
 ## Development Setup
 
 ### Prerequisites
