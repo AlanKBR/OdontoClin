@@ -1,0 +1,52 @@
+{
+    // Python linting
+    "python.linting.flake8Enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.enabled": true,
+    "python.linting.flake8Args": ["--max-line-length=100"],
+    "python.linting.pylintArgs": [],
+    // Python formatting
+    "python.formatting.provider": "black",
+    "python.formatting.blackArgs": ["--line-length", "100"],
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        }
+    },
+    "isort.args": ["--profile", "black", "--line-length", "100"],
+    "editor.rulers": [100],
+    // JavaScript linting
+    "eslint.enable": true,
+    "eslint.validate": [
+        "javascript",
+        "javascriptreact",
+        "typescript",
+        "typescriptreact"
+    ],
+    "eslint.options": {},
+    // HTML linting
+    "linthtml.enable": true,
+    "linthtml.validate": [
+        "html"
+    ],
+    // CSS/SCSS linting
+    "stylelint.enable": true,
+    "stylelint.validate": [
+        "css",
+        "scss",
+        "less"
+    ],
+    // djLint for Django/Jinja templates
+    "djlint.enable": true,
+    "djlint.lint": true,
+    // Prevent interference
+    "eslint.lintHTML": false,
+    "eslint.lintCSS": false,
+    "eslint.lintPython": false,
+    "stylelint.lintHTML": false,
+    "stylelint.lintJS": false,
+    "stylelint.lintPython": false,
+    "linthtml.lintJS": false,
+    "linthtml.lintPython": false
+}

@@ -1,0 +1,12 @@
+{
+    "browser": true,
+    "esversion": 9,
+    "globals": {
+        "bootstrap": true,
+        "planoData": true,
+        "odontograma": true
+    },
+    "loopfunc": true,
+    "asi": true,
+    "laxbreak": true
+}
