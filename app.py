@@ -14,14 +14,37 @@ app = create_app()
 
 
 @app.context_processor
-def inject_now():
-    """Inject current UTC time into templates."""
+def inject_now() -> dict[str, datetime.datetime]:
+    """
+    Injects the current UTC datetime into Jinja2 templates.
+
+    This allows templates to access the current time via the `now` variable.
+    The datetime object is timezone-aware and set to UTC.
+
+    Returns:
+        A dictionary where the key 'now' maps to the current UTC datetime.
+    """
     return {"now": datetime.datetime.now(timezone.utc)}
 
 
 @app.context_processor
-def inject_csp_nonce():
-    """Provide a CSP nonce for templates."""
+def inject_csp_nonce() -> dict[str, "callable[[], str]"]:
+    """
+    Provides a Content Security Policy (CSP) nonce for Jinja2 templates.
+
+    This function generates a unique nonce (number used once) that can be
+    used in CSP headers and inline scripts or styles to allow their execution
+    while mitigating cross-site scripting (XSS) risks.
+
+    The nonce is provided as a callable (lambda function) within the dictionary
+    to ensure that a fresh nonce is generated for each request if needed, although
+    in this specific implementation, the nonce is generated once per application
+    context setup for this processor.
+
+    Returns:
+        A dictionary where the key 'csp_nonce' maps to a lambda function
+        that returns the generated CSP nonce string.
+    """
     nonce = secrets.token_hex(16)
     return {"csp_nonce": lambda: nonce}
 

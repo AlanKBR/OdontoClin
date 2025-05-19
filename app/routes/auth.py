@@ -7,8 +7,8 @@ from flask_wtf import FlaskForm
 from wtforms import PasswordField, SelectField, StringField, SubmitField
 from wtforms.validators import DataRequired, Email, EqualTo, Length
 
-from app.extensions import db  # Reverted from ..extensions
-from app.models.user import User  # Reverted from ..models.user
+from app import extensions  # Changed from 'from app.extensions import users_db'
+from app.models.user import User
 
 # Create a base form with CSRF disabled for all forms
 
@@ -58,7 +58,8 @@ def login():
 
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
+        # Use extensions.users_db to ensure the initialized session is used
+        user = extensions.users_db.query(User).filter_by(username=form.username.data).first()
         if user and user.check_password(form.password.data):
             login_user(user)
             next_page = request.args.get("next")
@@ -81,12 +82,12 @@ def logout():
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
-        # Verifica se nome de usuário ou email já existem
-        if User.query.filter_by(username=form.username.data).first():
+        # Use extensions.users_db for queries and session operations
+        if extensions.users_db.query(User).filter_by(username=form.username.data).first():
             flash("Nome de usuário já existe", "danger")
             return render_template("auth/register.html", form=form)
 
-        if User.query.filter_by(email=form.email.data).first():
+        if extensions.users_db.query(User).filter_by(email=form.email.data).first():
             flash("Email já está cadastrado", "danger")
             return render_template("auth/register.html", form=form)
 
@@ -99,8 +100,8 @@ def register():
         )
         user.set_password(form.password.data)
 
-        db.session.add(user)
-        db.session.commit()
+        extensions.users_db.add(user)
+        extensions.users_db.commit()
 
         flash("Usuário cadastrado com sucesso!", "success")
         return redirect(url_for("main.dashboard"))

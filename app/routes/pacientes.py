@@ -3,6 +3,7 @@ from datetime import datetime
 
 from flask import (  # current_app,  # Unused import; session,  # Unused import
     Blueprint,
+    Response,
     abort,
     flash,
     jsonify,
@@ -13,6 +14,7 @@ from flask import (  # current_app,  # Unused import; session,  # Unused import
 )
 from flask_login import current_user, login_required
 from flask_wtf import FlaskForm
+from sqlalchemy import or_  # Add this import
 from sqlalchemy.exc import SQLAlchemyError  # Added import
 from wtforms import (
     DateField,
@@ -27,13 +29,14 @@ from wtforms import (
 )
 from wtforms.validators import DataRequired, Email, Length, Optional
 
-from app.extensions import db  # Changed from 'from app import db'
+from app.extensions import db  # Changed from \'from app import db\'
+from app.models.odontograma import Odontograma
+from app.models.paciente import Paciente  # Ensure Paciente is imported
 from app.models.paciente import (
     Anamnese,
     Ficha,
     Financeiro,
     Historico,
-    Paciente,
     PlanoTratamento,
     Procedimento,
 )
@@ -65,7 +68,6 @@ class PacienteForm(CSRFDisabledForm):
         ],
     )
     cpf = StringField("CPF", validators=[DataRequired(), Length(max=14)])
-    rg = StringField("RG", validators=[Length(max=20)])
     telefone = StringField("Telefone", validators=[Length(max=20)])
     celular = StringField("Celular", validators=[DataRequired(), Length(max=20)])
     email = EmailField("Email", validators=[Optional(), Email(), Length(max=120)])
@@ -109,13 +111,13 @@ class PacienteForm(CSRFDisabledForm):
     profissao = StringField("Profissão", validators=[Length(max=100)])
     submit = SubmitField("Salvar")
 
-    def validate_data_nascimento(self, form, field):
+    def validate_data_nascimento(self, field: StringField) -> None:
         try:
             datetime.strptime(field.data, "%d/%m/%Y")
         except (ValueError, TypeError) as exc:
             raise ValidationError("Data de nascimento deve estar no formato dd/mm/aaaa") from exc
 
-    def validate_cpf(self, form, field):
+    def validate_cpf(self, field: StringField) -> None:
         cpf = field.data
         if not cpf:
             raise ValidationError("CPF é obrigatório.")
@@ -135,7 +137,6 @@ class PacienteForm(CSRFDisabledForm):
 class FichaForm(CSRFDisabledForm):
     responsavel = StringField("Responsável", validators=[Length(max=100)])
     contato_emergencia = StringField("Contato de Emergência", validators=[Length(max=100)])
-    telefone_emergencia = StringField("Telefone de Emergência", validators=[Length(max=20)])
     convenio = StringField("Convênio", validators=[Length(max=100)])
     numero_convenio = StringField("Número do Convênio", validators=[Length(max=50)])
     alergias = TextAreaField("Alergias")
@@ -248,7 +249,7 @@ class ExcluirPacienteForm(CSRFDisabledForm):
 
 @pacientes.route("/pacientes/<int:paciente_id>/financeiro/novo", methods=["GET", "POST"])
 @login_required
-def novo_financeiro(paciente_id):
+def novo_financeiro(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
     form = FinanceiroForm()
 
@@ -288,25 +289,37 @@ def novo_financeiro(paciente_id):
 
 @pacientes.route("/pacientes")
 @login_required
-def listar_pacientes():
+def listar_pacientes() -> str:  # Add return type annotation
     page = request.args.get("page", 1, type=int)
     query = Paciente.query.order_by(Paciente.nome)  # Filtro de busca
     busca = request.args.get("busca", "")
     if busca:
+        # Adaptação para buscar em múltiplos campos
+        busca_termo = f"%{busca}%"
         query = query.filter(
-            Paciente.nome.like(f"%{busca}%")
-            | Paciente.cpf.like(f"%{busca}%")
-            | Paciente.telefone.like(f"%{busca}%")
-            | Paciente.celular.like(f"%{busca}%")
+            or_(
+                Paciente.nome.ilike(busca_termo),
+                Paciente.cpf.ilike(busca_termo),
+                Paciente.telefone.ilike(busca_termo),
+                Paciente.email.ilike(busca_termo),
+            )
         )
 
+    # Ordenar por nome por padrão
+    query = query.order_by(Paciente.nome)
+
     pacientes = query.paginate(page=page, per_page=10)
-    return render_template("pacientes/lista_pacientes.html", pacientes=pacientes, busca=busca)
+
+    return render_template(
+        "pacientes/lista_pacientes.html",
+        pacientes=pacientes,
+        busca=busca,
+    )
 
 
 @pacientes.route("/pacientes/novo", methods=["GET", "POST"])
 @login_required
-def novo_paciente():
+def novo_paciente() -> str:  # Add return type annotation
     form = PacienteForm()
     if form.validate_on_submit():
         data_nascimento = datetime.strptime(form.data_nascimento.data, "%d/%m/%Y").date()
@@ -315,7 +328,6 @@ def novo_paciente():
             data_nascimento=data_nascimento,
             sexo=form.sexo.data,
             cpf=form.cpf.data,
-            rg=form.rg.data,
             telefone=form.telefone.data,
             celular=form.celular.data,
             email=form.email.data,
@@ -353,7 +365,7 @@ def novo_paciente():
 
 @pacientes.route("/pacientes/<int:paciente_id>")
 @login_required
-def visualizar_paciente(paciente_id):
+def visualizar_paciente(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
     # We no longer need to pass CSRF tokens or forms for deletion
     # since we're handling it with JavaScript
@@ -364,7 +376,7 @@ def visualizar_paciente(paciente_id):
 
 @pacientes.route("/pacientes/<int:paciente_id>/editar", methods=["GET", "POST"])
 @login_required
-def editar_paciente(paciente_id):
+def editar_paciente(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
     form = PacienteForm(obj=paciente)
     if request.method == "GET" and paciente.data_nascimento:
@@ -399,7 +411,7 @@ def editar_paciente(paciente_id):
 
 @pacientes.route("/pacientes/<int:paciente_id>/financeiro")
 @login_required
-def listar_financeiro(paciente_id):
+def listar_financeiro(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
     lancamentos = (
         Financeiro.query.filter_by(paciente_id=paciente.id)
@@ -436,26 +448,22 @@ def listar_financeiro(paciente_id):
 
 @pacientes.route("/pacientes/<int:paciente_id>/excluir", methods=["POST"])
 @login_required
-def excluir_paciente(paciente_id):
-    # Get the patient
+def excluir_paciente(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
-
-    # Proceed with deletion (no CSRF protection)
     try:
         db.session.delete(paciente)
         db.session.commit()
         flash("Paciente excluído com sucesso!", "success")
-    except SQLAlchemyError as e:  # Changed from Exception to SQLAlchemyError
+    except SQLAlchemyError as e:
         db.session.rollback()
         flash(f"Erro ao excluir paciente: {str(e)}", "danger")
         return redirect(url_for("pacientes.visualizar_paciente", paciente_id=paciente_id))
-
     return redirect(url_for("pacientes.listar_pacientes"))
 
 
 @pacientes.route("/pacientes/<int:paciente_id>/ficha", methods=["GET", "POST"])
 @login_required
-def editar_ficha(paciente_id):
+def editar_ficha(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
 
     # Criar ficha se não existir
@@ -478,7 +486,7 @@ def editar_ficha(paciente_id):
 
 @pacientes.route("/pacientes/<int:paciente_id>/anamnese", methods=["GET", "POST"])
 @login_required
-def editar_anamnese(paciente_id):
+def editar_anamnese(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
 
     # Criar anamnese se não existir
@@ -504,7 +512,7 @@ def editar_anamnese(paciente_id):
 
 @pacientes.route("/pacientes/<int:paciente_id>/planos")
 @login_required
-def listar_planos(paciente_id):
+def listar_planos(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
     planos = (
         PlanoTratamento.query.filter_by(paciente_id=paciente.id)
@@ -519,7 +527,7 @@ def listar_planos(paciente_id):
 
 @pacientes.route("/pacientes/<int:paciente_id>/planos/novo", methods=["GET", "POST"])
 @login_required
-def novo_plano(paciente_id):
+def novo_plano(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
     form = PlanoTratamentoForm()
 
@@ -549,7 +557,7 @@ def novo_plano(paciente_id):
 
 @pacientes.route("/pacientes/<int:paciente_id>/planos/<int:plano_id>")
 @login_required
-def visualizar_plano(paciente_id, plano_id):
+def visualizar_plano(paciente_id: int, plano_id: int):  # Add type hints
     paciente = Paciente.query.get_or_404(paciente_id)
     plano = PlanoTratamento.query.get_or_404(plano_id)
 
@@ -559,6 +567,13 @@ def visualizar_plano(paciente_id, plano_id):
 
     procedimentos = Procedimento.query.filter_by(plano_id=plano.id).all()
     dentista = User.query.get(plano.dentista_id) if plano.dentista_id else None
+
+    # Buscar o último odontograma do paciente (se existir)
+    ultimo_odontograma = (
+        Odontograma.query.filter_by(paciente_id=paciente_id)
+        .order_by(Odontograma.data_criacao.desc())
+        .first()
+    )
 
     # Buscar categorias de tratamento para o modal de novo procedimento
     categorias = CategoriaTratamento.query.order_by(CategoriaTratamento.nome).all()
@@ -574,6 +589,8 @@ def visualizar_plano(paciente_id, plano_id):
         procedimentos=procedimentos,
         dentista=dentista,
         categorias=categorias,
+        odontograma=ultimo_odontograma,
+        now=datetime.now(),
         aba_ativa="plano",
     )
 
@@ -582,7 +599,7 @@ def visualizar_plano(paciente_id, plano_id):
     "/pacientes/<int:paciente_id>/planos/<int:plano_id>/editar", methods=["GET", "POST"]
 )
 @login_required
-def editar_plano(paciente_id, plano_id):
+def editar_plano(paciente_id: int, plano_id: int):  # Add type hints
     paciente = Paciente.query.get_or_404(paciente_id)
     plano = PlanoTratamento.query.get_or_404(plano_id)
 
@@ -615,7 +632,7 @@ def editar_plano(paciente_id, plano_id):
     methods=["GET", "POST"],
 )
 @login_required
-def novo_procedimento(paciente_id, plano_id):
+def novo_procedimento(paciente_id: int, plano_id: int):  # Add type hints
     paciente = Paciente.query.get_or_404(paciente_id)
     plano = PlanoTratamento.query.get_or_404(plano_id)
 
@@ -709,7 +726,7 @@ def novo_procedimento(paciente_id, plano_id):
     methods=["GET", "POST"],
 )
 @login_required
-def editar_procedimento(paciente_id, plano_id, proc_id):
+def editar_procedimento(paciente_id: int, plano_id: int, proc_id: int):  # Add type hints
     paciente = Paciente.query.get_or_404(paciente_id)
     plano = PlanoTratamento.query.get_or_404(plano_id)
     procedimento = Procedimento.query.get_or_404(proc_id)
@@ -830,7 +847,7 @@ def editar_procedimento(paciente_id, plano_id, proc_id):
     methods=["POST"],
 )
 @login_required
-def excluir_procedimento(paciente_id, plano_id, proc_id):
+def excluir_procedimento(paciente_id: int, plano_id: int, proc_id: int):  # Add type hints
     paciente = Paciente.query.get_or_404(paciente_id)
     plano = PlanoTratamento.query.get_or_404(plano_id)
     procedimento = Procedimento.query.get_or_404(proc_id)
@@ -860,7 +877,7 @@ def excluir_procedimento(paciente_id, plano_id, proc_id):
     methods=["POST"],
 )
 @login_required
-def adicionar_procedimento(paciente_id, plano_id):
+def adicionar_procedimento(paciente_id: int, plano_id: int):  # Add type hints
     """Endpoint para adicionar procedimento via formulário ajax"""
     paciente = Paciente.query.get_or_404(paciente_id)
     plano = PlanoTratamento.query.get_or_404(plano_id)
@@ -921,7 +938,7 @@ def adicionar_procedimento(paciente_id, plano_id):
 
 @pacientes.route("/api/tratamentos/por-categoria/<int:categoria_id>")
 @login_required
-def tratamentos_por_categoria(categoria_id):
+def tratamentos_por_categoria(categoria_id: int):  # Add type hint
     """Endpoint AJAX para buscar tratamentos de uma categoria"""
     tratamentos = Tratamento.query.filter_by(categoria_id=categoria_id, ativo=True).all()
     return jsonify(
@@ -939,7 +956,7 @@ def tratamentos_por_categoria(categoria_id):
 
 @pacientes.route("/pacientes/<int:paciente_id>/historico")
 @login_required
-def listar_historico(paciente_id):
+def listar_historico(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
     historicos = (
         Historico.query.filter_by(paciente_id=paciente.id).order_by(Historico.data.desc()).all()
@@ -955,7 +972,7 @@ def listar_historico(paciente_id):
 
 @pacientes.route("/pacientes/<int:paciente_id>/historico/novo", methods=["GET", "POST"])
 @login_required
-def novo_historico(paciente_id):
+def novo_historico(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
     form = HistoricoForm()
 
@@ -979,3 +996,105 @@ def novo_historico(paciente_id):
         paciente=paciente,
         aba_ativa="historico",
     )
+
+
+@pacientes.route("/paciente/<int:id>/odontograma")
+@login_required
+def odontograma(id: int):  # Add type hint
+    """Exibe o odontograma do paciente."""
+    paciente = Paciente.query.get_or_404(id)
+
+    # Busca o último odontograma do paciente (se existir)
+    ultimo_odontograma = (
+        Odontograma.query.filter_by(paciente_id=id)
+        .order_by(Odontograma.data_criacao.desc())
+        .first()
+    )
+
+    return render_template(
+        "pacientes/odontograma.html",
+        paciente=paciente,
+        odontograma=ultimo_odontograma,
+        aba_ativa="odontograma",
+    )
+
+
+@pacientes.route("/paciente/<int:id>/salvar_odontograma", methods=["POST"])
+@login_required
+def salvar_odontograma(id: int):  # Add type hint
+    """Salva o odontograma do paciente."""
+    paciente = Paciente.query.get_or_404(id)
+
+    if not request.is_json:
+        return jsonify({"success": False, "message": "Dados inválidos"})
+
+    dados = request.get_json()
+
+    try:
+        # Verifica se já existe um odontograma para este paciente
+        odontograma = Odontograma.query.filter_by(paciente_id=id).first()
+
+        if odontograma:
+            # Atualiza o odontograma existente
+            odontograma.dados = json.dumps(dados)
+            odontograma.criado_por = current_user.id
+            odontograma.data_criacao = datetime.utcnow()
+        else:
+            # Cria um novo odontograma
+            odontograma = Odontograma(
+                paciente_id=paciente.id, dados=json.dumps(dados), criado_por=current_user.id
+            )
+            db.session.add(odontograma)
+
+        db.session.commit()
+        return jsonify({"success": True})
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return jsonify({"success": False, "message": str(e)})
+
+
+@pacientes.route("/paciente/<int:id>/get_ultimo_odontograma")
+@login_required
+def get_ultimo_odontograma_json(id: int):  # Add type hint
+    """Retorna o último odontograma do paciente em formato JSON."""
+    # Busca o último odontograma do paciente (se existir)
+    ultimo_odontograma = (
+        Odontograma.query.filter_by(paciente_id=id)
+        .order_by(Odontograma.data_criacao.desc())
+        .first()
+    )
+
+    if ultimo_odontograma:
+        return jsonify({"success": True, "dados": ultimo_odontograma.dados})
+    else:
+        return jsonify({"success": False, "message": "Nenhum odontograma encontrado"})
+
+
+@pacientes.route("/list_all", methods=["GET"])
+@login_required
+def list_all_pacientes() -> Response:
+    """Retorna uma lista de todos os pacientes (id e nome) para popular selects."""
+    try:
+        pacientes_list = Paciente.query.order_by(Paciente.nome).all()
+        return jsonify([{"id": p.id, "nome": p.nome} for p in pacientes_list])
+    except Exception as e:
+        # Log the exception e
+        return jsonify({"error": str(e)}), 500
+
+
+# Rota para buscar pacientes por nome (para autocomplete)
+@pacientes.route("/search_pacientes", methods=["GET"])
+@login_required
+def search_pacientes() -> Response:
+    search_term = request.args.get("term", "")
+    if len(search_term) < 2:  # Minimum characters to search
+        return jsonify([])
+
+    pacientes_encontrados = (
+        Paciente.query.filter(Paciente.nome.ilike(f"%{search_term}%"))
+        .limit(10)  # Limit results for performance
+        .all()
+    )
+    nomes_pacientes = [paciente.nome for paciente in pacientes_encontrados]
+    return jsonify(nomes_pacientes)

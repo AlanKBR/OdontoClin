@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block title %}Nova Receita | OdontoClinic{% endblock %}
+
+{% block extra_css %}
+<style nonce="{{ csp_nonce() }}">
+    .medicamento-item {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    .medicamento-item:hover {
+        background-color: rgba(0, 123, 255, 0.1);
+    }
+    #editor-receita {
+        min-height: 300px;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        padding: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2"><i class="bi bi-prescription2"></i> Nova Receita</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <a href="{{ url_for('receitas.index') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Voltar
+                </a>
+                <button id="btn-imprimir" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-printer"></i> Imprimir
+                </button>
+                <button id="btn-salvar-modelo" class="btn btn-sm btn-outline-success"
+                        data-bs-toggle="modal" data-bs-target="#modalSalvarModelo">
+                    <i class="bi bi-save"></i> Salvar como Modelo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Coluna de pesquisa de medicamentos -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="bi bi-search"></i> Buscar Medicamentos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="input-group mb-3">
+                        <input type="text" id="busca-medicamento" class="form-control"
+                               placeholder="Digite o nome ou princípio ativo...">
+                        <button class="btn btn-outline-primary" type="button" id="btn-buscar">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+
+                    <div id="resultados-medicamentos" class="list-group mt-3">
+                        <!-- Aqui serão mostrados os resultados da busca via JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="bi bi-bookmark"></i> Meus Modelos</h5>
+                </div>
+                <div class="card-body">
+                    <select id="select-modelos" class="form-select mb-2">
+                        <option value="">Selecione um modelo...</option>
+                        <!-- Os modelos serão carregados via JavaScript -->
+                    </select>
+                    <button id="btn-carregar-modelo" class="btn btn-sm btn-outline-primary w-100">
+                        Carregar Modelo
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coluna do editor de receita -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="bi bi-pencil-square"></i> Editor de Receita</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="data-receita" class="form-label">Data:</label>
+                        <input type="text" id="data-receita" class="form-control" placeholder="dd/mm/aaaa">
+                    </div>
+
+                    <div class="mb-3 position-relative">
+                        <label for="paciente-receita" class="form-label">Paciente:</label>
+                        <input type="text" id="paciente-receita" class="form-control" placeholder="Nome do paciente" list="pacientes-datalist">
+                        <datalist id="pacientes-datalist"></datalist>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editor-receita" class="form-label">Prescrição:</label>
+                        <div id="editor-receita" class="form-control" contenteditable="true"></div>
+                    </div>
+
+                    <div class="mt-3 text-end">
+                        <button id="btn-limpar" class="btn btn-outline-danger me-2">
+                            <i class="bi bi-trash"></i> Limpar
+                        </button>
+                        <button id="btn-imprimir-interno" class="btn btn-primary">
+                            <i class="bi bi-printer"></i> Imprimir
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detalhes do medicamento selecionado -->
+            <div id="card-detalhes-medicamento" class="card mb-4 d-none">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="bi bi-info-circle"></i>
+                        <span id="titulo-medicamento-selecionado">Detalhes do Medicamento</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="detalhes-medicamento">
+                        <!-- Aqui serão mostrados os detalhes do medicamento selecionado via JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Salvar Modelo -->
+<div class="modal fade" id="modalSalvarModelo" tabindex="-1" aria-labelledby="modalSalvarModeloLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalSalvarModeloLabel">Salvar como Modelo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form action="{{ url_for('receitas.salvar_modelo') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="titulo-modelo" class="form-label">Título do Modelo:</label>
+                        <input type="text" id="titulo-modelo" name="titulo" class="form-control" required>
+                    </div>
+                    <input type="hidden" id="conteudo-modelo" name="conteudo">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Template para impressão -->
+<div id="template-impressao" style="display: none;">
+    <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h2>OdontoClinic</h2>
+            <p>RECEITUÁRIO</p>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <p style="margin-bottom: 5px;"><strong>Data:</strong> <span id="print-data"></span></p>
+            <p><strong>Paciente:</strong> <span id="print-paciente"></span></p>
+        </div>
+
+        <div style="border-top: 1px solid #ccc; padding-top: 20px; margin-bottom: 40px;">
+            <div id="print-prescricao"></div>
+        </div>
+
+        <div style="margin-top: 80px; text-align: center;">
+            <div style="border-top: 1px solid #000; width: 200px; margin: 0 auto;"></div>
+            <p>{{ current_user.nome_completo }}</p>
+            <p>CRO-{{ current_user.registro_profissional }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script nonce="{{ csp_nonce() }}">
+document.addEventListener('DOMContentLoaded', function() {
+    const buscarBtn = document.getElementById('btn-buscar');
+    const buscaInput = document.getElementById('busca-medicamento');
+    const resultadosDiv = document.getElementById('resultados-medicamentos');
+    const editorReceita = document.getElementById('editor-receita');
+    const btnLimpar = document.getElementById('btn-limpar');
+    const btnImprimir = document.getElementById('btn-imprimir');
+    const btnImprimirInterno = document.getElementById('btn-imprimir-interno');
+    const dataReceita = document.getElementById('data-receita');
+    const pacienteReceita = document.getElementById('paciente-receita');
+    const cardDetalhesMedicamento = document.getElementById('card-detalhes-medicamento');
+    const detalhesMedicamento = document.getElementById('detalhes-medicamento');
+    const tituloMedicamentoSelecionado = document.getElementById('titulo-medicamento-selecionado');
+    const modalSalvarModelo = document.getElementById('modalSalvarModelo');
+    const conteudoModeloInput = document.getElementById('conteudo-modelo');
+    const selectModelos = document.getElementById('select-modelos');
+    const btnCarregarModelo = document.getElementById('btn-carregar-modelo');
+
+    // Autocomplete para o campo Paciente
+    const pacienteInput = document.getElementById('paciente-receita');
+    const pacientesDatalist = document.getElementById('pacientes-datalist');
+
+    // Function to populate datalist
+    function populatePacienteDatalist() {
+        fetch("{{ url_for('pacientes.list_all_pacientes') }}")
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(pacientes => {
+                pacientesDatalist.innerHTML = ''; // Clear previous options
+                pacientes.forEach(paciente => {
+                    const option = document.createElement('option');
+                    option.value = paciente.nome; // Value that appears in input
+                    // option.textContent = paciente.nome; // Text content for <option> if it were a select
+                    pacientesDatalist.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Erro ao carregar lista de pacientes para datalist:', error);
+                // Optionally, inform the user about the error, though datalist doesn't show it directly
+            });
+    }
+
+    // Populate the datalist on page load
+    populatePacienteDatalist();
+
+    // Definir a data atual como padrão
+    const dataAtual = new Date();
+    // Format to dd/mm/yyyy
+    const dia = String(dataAtual.getDate()).padStart(2, '0');
+    const mes = String(dataAtual.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+    const ano = dataAtual.getFullYear();
+    const dataFormatadaParaInput = `${dia}/${mes}/${ano}`;
+    dataReceita.value = dataFormatadaParaInput;
+
+    // Inicializar Flatpickr para o campo de data da receita
+    if (typeof flatpickr !== 'undefined') {
+        flatpickr(dataReceita, {
+            dateFormat: "d/m/Y",
+            locale: "pt", // Certifique-se de que o locale pt do Flatpickr está carregado
+            allowInput: true
+        });
+    } else {
+        console.warn('Flatpickr não está definido. O seletor de calendário não funcionará.');
+    }
+
+    // Função para carregar os modelos do usuário
+    function carregarModelos() {
+        fetch('{{ url_for("receitas.listar_modelos") }}', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(modelos => {
+            selectModelos.innerHTML = '<option value="">Selecione um modelo...</option>';
+            modelos.forEach(modelo => {
+                const option = document.createElement('option');
+                option.value = modelo.id;
+                option.textContent = modelo.titulo;
+                option.dataset.conteudo = modelo.conteudo;
+                selectModelos.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Erro ao carregar modelos:', error));
+    }
+
+    // Carregar modelos ao iniciar
+    carregarModelos();
+
+    // Evento de buscar medicamentos
+    function buscarMedicamentos() {
+        const termo = buscaInput.value.trim();
+        if (!termo) return;
+
+        resultadosDiv.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Carregando...</span></div></div>';
+
+        fetch(`{{ url_for('receitas.buscar_medicamentos') }}?termo=${encodeURIComponent(termo)}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(medicamentos => {
+            resultadosDiv.innerHTML = '';
+
+            if (medicamentos.length === 0) {
+                resultadosDiv.innerHTML = '<div class="alert alert-info">Nenhum medicamento encontrado.</div>';
+                return;
+            }
+
+            medicamentos.forEach(med => {
+                const item = document.createElement('a');
+                item.href = '#';
+                item.className = 'list-group-item list-group-item-action medicamento-item';
+                item.innerHTML = `<strong>${med.nome}</strong> ${med.concentracao ? `(${med.concentracao})` : ''}<br><small>${med.principio_ativo}</small>`;
+
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    selecionarMedicamento(med);
+                });
+
+                resultadosDiv.appendChild(item);
+            });
+        })
+        .catch(error => {
+            console.error('Erro na busca:', error);
+            resultadosDiv.innerHTML = '<div class="alert alert-danger">Erro ao buscar medicamentos.</div>';
+        });
+    }
+
+    // Evento de busca
+    buscarBtn.addEventListener('click', buscarMedicamentos);
+    buscaInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            buscarMedicamentos();
+        }
+    });
+
+    // Função para selecionar um medicamento
+    function selecionarMedicamento(medicamento) {
+        // Mostrar detalhes do medicamento
+        cardDetalhesMedicamento.classList.remove('d-none');
+        tituloMedicamentoSelecionado.textContent = medicamento.nome;
+
+        detalhesMedicamento.innerHTML = `
+            <div class="mb-2"><strong>Princípio Ativo:</strong> ${medicamento.principio_ativo}</div>
+            ${medicamento.concentracao ? `<div class="mb-2"><strong>Concentração:</strong> ${medicamento.concentracao}</div>` : ''}
+            <div class="mb-2"><strong>Posologia Recomendada:</strong></div>
+            <div class="alert alert-light">${medicamento.posologia_padrao}</div>
+            <button id="btn-inserir-medicamento" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-circle"></i> Inserir na Receita
+            </button>
+        `;
+
+        // Evento para inserir medicamento na receita
+        document.getElementById('btn-inserir-medicamento').addEventListener('click', function() {
+            const conteudo = `${medicamento.nome} ${medicamento.concentracao ? medicamento.concentracao : ''}\n${medicamento.posologia_padrao}\n\n`;
+            editorReceita.innerHTML += conteudo.replace(/\n/g, '<br>');
+        });
+    }
+
+    // Evento de limpar receita
+    btnLimpar.addEventListener('click', function() {
+        if (confirm('Tem certeza que deseja limpar a receita?')) {
+            editorReceita.innerHTML = '';
+            pacienteReceita.value = '';
+        }
+    });
+
+    // Função para imprimir a receita
+    function imprimirReceita() {
+        const printWindow = window.open('', '_blank');
+        const template = document.getElementById('template-impressao').innerHTML;
+
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Receita Médica</title>
+                <style>
+                    @media print {
+                        body { font-size: 12pt; }
+                    }
+                </style>
+            </head>
+            <body>${template}</body>
+            </html>
+        `);
+
+        // Preencher os dados no template de impressão
+        printWindow.document.getElementById('print-data').textContent = formatarData(dataReceita.value);
+        printWindow.document.getElementById('print-paciente').textContent = pacienteReceita.value;
+        printWindow.document.getElementById('print-prescricao').innerHTML = editorReceita.innerHTML;
+
+        printWindow.document.close();
+
+        // Atraso para garantir que o conteúdo seja carregado antes de imprimir
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 500);
+    }
+
+    // Função para formatar data (YYYY-MM-DD para DD/MM/YYYY)
+    function formatarData(dataStr) {
+        if (!dataStr) return '';
+        // Check if the date is already in dd/mm/yyyy format
+        if (dataStr.includes('/')) {
+            const partesDMY = dataStr.split('/');
+            if (partesDMY.length === 3 && partesDMY[0].length === 2 && partesDMY[1].length === 2 && partesDMY[2].length === 4) {
+                return dataStr; // Already in correct format
+            }
+        }
+        const partes = dataStr.split('-'); // Expect YYYY-MM-DD
+        if (partes.length !== 3) return dataStr; // Return original if not YYYY-MM-DD
+        return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+
+    // Eventos de impressão
+    btnImprimir.addEventListener('click', imprimirReceita);
+    btnImprimirInterno.addEventListener('click', imprimirReceita);
+
+    // Evento para salvar modelo - preparar o conteúdo
+    document.querySelector('#modalSalvarModelo').addEventListener('show.bs.modal', function() {
+        conteudoModeloInput.value = editorReceita.innerHTML;
+    });
+
+    // Evento para carregar modelo
+    btnCarregarModelo.addEventListener('click', function() {
+        const selectedOption = selectModelos.options[selectModelos.selectedIndex];
+        if (selectedOption && selectedOption.value) {
+            const conteudo = selectedOption.dataset.conteudo;
+            if (conteudo) {
+                if (editorReceita.innerHTML && !confirm('Isso substituirá o conteúdo atual. Deseja continuar?')) {
+                    return;
+                }
+                editorReceita.innerHTML = conteudo;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

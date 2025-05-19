@@ -1,5 +1,4 @@
-from app import create_app
-from app.extensions import db
+from app import create_app, extensions
 from app.models.user import User
 
 
@@ -9,7 +8,7 @@ def criar_usuario_admin(username, email, nome_completo, senha):
 
     with app.app_context():
         # Verificar se já existe um usuário com este username
-        usuario_existente = User.query.filter_by(username=username).first()
+        usuario_existente = extensions.users_db.query(User).filter_by(username=username).first()
         if usuario_existente:
             print(f"AVISO: Já existe um usuário com o username '{username}'")
             return
@@ -18,8 +17,8 @@ def criar_usuario_admin(username, email, nome_completo, senha):
         usuario = User(username=username, email=email, nome_completo=nome_completo, cargo="admin")
         usuario.set_password(senha)
 
-        db.session.add(usuario)
-        db.session.commit()
+        extensions.users_db.add(usuario)
+        extensions.users_db.commit()
         print(f"Usuário administrador '{username}' criado com sucesso!")
 
 

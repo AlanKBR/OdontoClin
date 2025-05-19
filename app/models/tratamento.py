@@ -4,6 +4,9 @@ from app.extensions import db
 
 
 class CategoriaTratamento(db.Model):
+    __tablename__ = "categoria_tratamento"
+    __bind_key__ = "tratamentos"
+
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(100), nullable=False, unique=True)
     descricao = db.Column(db.Text)
@@ -16,6 +19,9 @@ class CategoriaTratamento(db.Model):
 
 
 class Tratamento(db.Model):
+    __tablename__ = "tratamento"
+    __bind_key__ = "tratamentos"
+
     id = db.Column(db.Integer, primary_key=True)
     categoria_id = db.Column(db.Integer, db.ForeignKey("categoria_tratamento.id"), nullable=False)
     nome = db.Column(db.String(200), nullable=False)

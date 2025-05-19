@@ -1,33 +1,8 @@
 {
-    // Python linting
-    "python.linting.flake8Enabled": true,
-    "python.linting.pylintEnabled": true,
-    "python.linting.enabled": true,
-    "python.linting.flake8Args": [
-        "--max-line-length=100"
-    ],
-    "python.linting.pylintArgs": [],
-    // Python formatting
-    "python.formatting.provider": "none",
-    "editor.defaultFormatter": null,
-    "[python]": {
-        "editor.formatOnSave": true,
-        "editor.defaultFormatter": "ms-python.black-formatter",
-        "editor.codeActionsOnSave": {
-            "source.organizeImports": "explicit"
-        }
+    "files.associations": {
+        "*.html": "jinja-html"
     },
-    "black-formatter.args": [
-        "--line-length",
-        "100"
-    ],
-    "isort.args": [
-        "--profile",
-        "black",
-        "--line-length",
-        "100"
-    ],
-    "editor.rulers": [
-        100
-    ]
+    "emmet.includeLanguages": {
+        "jinja-html": "html"
+    }
 }

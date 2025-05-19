@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}Configurações{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Configurações</h2>
+    <hr>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="list-group">
+                <a href="#appearance" class="list-group-item list-group-item-action active" data-bs-toggle="list">Aparência</a>
+                <a href="#account" class="list-group-item list-group-item-action" data-bs-toggle="list">Conta</a>
+                <a href="#notifications" class="list-group-item list-group-item-action" data-bs-toggle="list">Notificações</a>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="appearance">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Aparência</h4>
+                        </div>
+                        <div class="card-body">
+                            <h5>Tema</h5>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="darkModeToggle">
+                                <label class="form-check-label" for="darkModeToggle">
+                                    Modo Escuro
+                                </label>
+                            </div>
+                            <div class="d-flex mt-4">
+                                <div class="theme-preview light-theme me-4">
+                                    <div class="card theme-card" onclick="setLightTheme()">
+                                        <div class="card-body text-center">
+                                            <div class="theme-sample">
+                                                <div class="theme-header"></div>
+                                                <div class="theme-content"></div>
+                                            </div>
+                                            <p class="mt-2 mb-0">Tema Claro</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="theme-preview dark-theme">
+                                    <div class="card theme-card" onclick="setDarkTheme()">
+                                        <div class="card-body text-center">
+                                            <div class="theme-sample dark">
+                                                <div class="theme-header"></div>
+                                                <div class="theme-content"></div>
+                                            </div>
+                                            <p class="mt-2 mb-0">Tema Escuro</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="account">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Configurações da Conta</h4>
+                        </div>
+                        <div class="card-body">
+                            <p>Opções de configuração da conta serão adicionadas aqui.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="notifications">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Configurações de Notificações</h4>
+                        </div>
+                        <div class="card-body">
+                            <p>Opções de configuração de notificações serão adicionadas aqui.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .theme-preview .theme-card {
+        cursor: pointer;
+        transition: transform 0.2s;
+        width: 150px;
+    }
+
+    .theme-preview .theme-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .theme-sample {
+        width: 100%;
+        height: 80px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .theme-sample .theme-header {
+        height: 20px;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .theme-sample .theme-content {
+        height: 60px;
+        background-color: #fff;
+    }
+
+    .theme-sample.dark .theme-header {
+        background-color: #1e1e1e;
+        border-bottom: 1px solid #333;
+    }
+
+    .theme-sample.dark .theme-content {
+        background-color: #121212;
+    }
+</style>
+
+<!-- Não precisa do script aqui, pois estamos usando o script global theme-toggle.js -->
+{% endblock %}

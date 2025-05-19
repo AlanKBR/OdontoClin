@@ -54,9 +54,7 @@ You can run the linting tools manually using:
 python lint.py
 
 # On Windows
-.\lint.bat
-# or
-.\lint.ps1
+python lint.py
 ```
 
 ### Git Pre-commit Hook

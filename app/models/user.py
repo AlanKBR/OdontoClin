@@ -6,6 +6,9 @@ from app.extensions import db
 
 
 class User(UserMixin, db.Model):
+    __tablename__ = "users"
+    __bind_key__ = "users"  # Added to route queries for this model to the 'users' bind
+
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), unique=True, index=True)
     email = db.Column(db.String(120), unique=True, index=True)
