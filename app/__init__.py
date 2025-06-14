@@ -1,5 +1,6 @@
 import os
-from datetime import date, datetime  # Add date for date filtering
+import secrets  # Add secrets
+from datetime import date, datetime, timezone  # Add timezone
 from typing import Union  # Add Union for Python < 3.10 compatibility if needed
 
 from flask import Flask, render_template
@@ -17,7 +18,7 @@ from app.routes.tratamentos import tratamentos
 from app.routes.users import users
 
 # Import extensions from the new extensions.py file
-from .extensions import db, login_manager, migrate
+from .extensions import db, login_manager, mobility
 from .multidb import multidb
 
 
@@ -60,9 +61,11 @@ def create_app() -> Flask:
     # Disable CSRF protection completely
     app.config["WTF_CSRF_ENABLED"] = False
 
+    # Inicializa Flask-Mobility para detecção de dispositivos móveis
+    mobility.init_app(app)
+
     # Inicializa os bancos de dados
     db.init_app(app)  # Initialize the main db instance first
-    migrate.init_app(app, db)
 
     # Inicializa sistema de múltiplos bancos de dados, passing the main db instance
     multidb.init_app(app, db_instance=db)  # Pass the db instance from extensions
@@ -98,6 +101,30 @@ def create_app() -> Flask:
 
     app.jinja_env.filters["date"] = format_date_filter
 
+    @app.context_processor
+    def inject_now() -> dict[str, datetime]:
+        """
+        Injects the current UTC datetime into Jinja2 templates.
+        """
+        return {"now": datetime.now(timezone.utc)}
+
+    @app.context_processor
+    def inject_csp_nonce() -> dict[str, "callable[[], str]"]:
+        """
+        Provides a Content Security Policy (CSP) nonce for Jinja2 templates.
+        """
+        nonce = secrets.token_hex(16)
+        return {"csp_nonce": lambda: nonce}
+
+    @app.context_processor
+    def inject_mobility() -> dict:
+        """
+        Injects mobility information into templates.
+        """
+        from flask import request
+
+        return {"is_mobile": getattr(request, "MOBILE", False)}
+
     @login_manager.user_loader
     def load_user(user_id: str) -> Union[User, None]:  # Assuming User model or None
         return User.query.get(int(user_id))
@@ -122,5 +149,27 @@ def create_app() -> Flask:
         if value is None:
             return "R$ 0,00"
         return f"R$ {value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+    # Adiciona filtro Jinja para verificar existência de arquivo
+    def file_exists_filter(path):
+        import os
+
+        base = app.root_path
+        abs_path = os.path.join(base, path) if not os.path.isabs(path) else path
+        return os.path.exists(abs_path)
+
+    app.jinja_env.filters["file_exists"] = file_exists_filter
+
+    # Context processor para disponibilizar informações da clínica em todos os templates
+    @app.context_processor
+    def inject_clinica_info():
+        from app.models.clinica import Clinica
+
+        try:
+            clinica = Clinica.get_instance()
+            return {"clinica_global": clinica}
+        except Exception:
+            # Se houver erro ao acessar o banco, retorna dados padrão
+            return {"clinica_global": None}
 
     return app

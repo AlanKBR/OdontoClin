@@ -2,10 +2,11 @@
 # This file makes Python treat the directory as a package.
 
 # Importa todos os modelos para garantir que eles sejam carregados
-from app.models import odontograma, paciente, tratamento, user  # noqa
+from app.models import clinica, paciente, tratamento, user  # noqa  # Removed odontograma
+from app.models.clinica import Clinica  # noqa
 
 # Exportar classes importantes para facilitar a importação
-from app.models.odontograma import Odontograma  # noqa
+# from app.models.odontograma import Odontograma  # noqa  # Removed import
 from app.models.paciente import (  # noqa
     Anamnese,
     Ficha,

@@ -18,6 +18,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+# sys.stdout.reconfigure(encoding='utf-8')  # Disabled for compatibility
+
 
 def check_tool_installed(tool_name: str) -> bool:
     """
@@ -338,6 +340,32 @@ def configure_vscode_jinja_settings(project_root: Path) -> bool:
         return False
 
 
+# List of required VS Code extensions for linting/formatting
+REQUIRED_VSCODE_EXTENSIONS = [
+    "ms-python.black-formatter",  # Black formatter for Python
+    "ms-python.flake8",  # Flake8 linter for Python
+    "charliermarsh.ruff",  # Ruff linter/formatter for Python
+    "monosans.djlint",  # djLint for Jinja2 templates
+    "dbaeumer.vscode-eslint",  # ESLint for JavaScript
+    "samuelcolvin.jinjahtml",  # Jinja2 Enhance for HTML templates
+]
+
+
+def check_and_install_vscode_extensions():
+    """
+    Ensure all required VS Code extensions for linting/formatting are installed.
+    """
+    if not check_tool_installed("code"):
+        print("[WARN] VS Code CLI ('code') not found in PATH. Skipping extension checks.")
+        return
+    for ext in REQUIRED_VSCODE_EXTENSIONS:
+        if not check_vscode_extension_installed(ext):
+            print(f"[EXT] Installing missing VS Code extension: {ext}")
+            install_vscode_extension(ext)
+        else:
+            print(f"[EXT] VS Code extension already installed: {ext}")
+
+
 def main() -> int:
     """
     Main function to run linting and formatting tools (Black, isort, Flake8, ESLint, djlint)
@@ -351,6 +379,9 @@ def main() -> int:
 
     project_root = Path(__file__).parent.resolve()
     exclude_dirs = ["venv", "env", "__pycache__", "migrations", ".git", "node_modules"]
+
+    # Check and install all required VS Code extensions for linting/formatting
+    check_and_install_vscode_extensions()
 
     # Find and filter files
     python_files = find_python_files(project_root)
@@ -448,7 +479,7 @@ def main() -> int:
             djlint_success = run_command(djlint_cmd_args, verbose)
 
             if not djlint_success:
-                print("⚠️ Issues found. Attempting auto-fix...")
+                print(" Issues found. Attempting auto-fix...")
                 reformat_args = (
                     ["djlint", "--profile", "jinja", "--warn", "--reformat"]
                     + djlint_config_args
@@ -512,7 +543,7 @@ def main() -> int:
                             print("--- end djlint issues summary ---\n")
                             results["djlint"] = False
                 else:
-                    print("❌ Auto-fix failed")
+                    print("Auto-fix failed")
                     results["djlint"] = False
             else:
                 print("[OK] No issues found")

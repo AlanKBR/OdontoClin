@@ -30,18 +30,6 @@
                     </div>
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="{{ form.email.id }}" class="form-label">{{ form.email.label.text }} *</label>
-                            {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), type="email") }}
-                            {% for error in form.email.errors %}
-                                <div class="invalid-feedback">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <div class="mb-3">
                             <label for="{{ form.nome_completo.id }}" class="form-label">{{ form.nome_completo.label.text }} *</label>
                             {{ form.nome_completo(class="form-control" + (" is-invalid" if form.nome_completo.errors else "")) }}
                             {% for error in form.nome_completo.errors %}
@@ -49,17 +37,38 @@
                             {% endfor %}
                         </div>
                     </div>
+                </div>
+
+                <div class="row mb-3">
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="{{ form.cargo.id }}" class="form-label">Cargo</label>
-                            <input type="text" class="form-control" value="{{ form.cargo.data|capitalize }}" readonly disabled>
-                            <small class="form-text text-muted">Seu cargo não pode ser alterado. Contate um administrador para isso.</small>
-                            {{ form.cargo(type="hidden") }}
+                            <label for="{{ form.cro.id }}" class="form-label">{{ form.cro.label.text }}</label>
+                            {{ form.cro(class="form-control" + (" is-invalid" if form.cro.errors else "")) }}
+                            {% for error in form.cro.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <small class="form-text text-muted">Opcional</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="{{ form.nome_profissional.id }}" class="form-label">{{ form.nome_profissional.label.text }} *</label>
+                            {{ form.nome_profissional(class="form-control" + (" is-invalid" if form.nome_profissional.errors else "")) }}
+                            {% for error in form.nome_profissional.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
 
                 <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="cargo" class="form-label">Cargo</label>
+                            <input type="text" class="form-control" value="{{ current_user.cargo|capitalize }}" readonly disabled>
+                            <small class="form-text text-muted">Seu cargo não pode ser alterado. Contate um administrador para isso.</small>
+                        </div>
+                    </div>
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label for="{{ form.password.id }}" class="form-label">
@@ -71,6 +80,9 @@
                             {% endfor %}
                         </div>
                     </div>
+                </div>
+
+                <div class="row mb-3">
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label for="{{ form.confirm_password.id }}" class="form-label">{{ form.confirm_password.label.text }}</label>

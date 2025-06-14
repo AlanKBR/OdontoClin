@@ -102,13 +102,6 @@
                 </a>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link {% if aba_ativa == 'odontograma' %}active{% endif %}"
-                   href="{{ url_for('pacientes.odontograma', id=paciente.id) }}"
-                   role="tab">
-                    <i class="bi bi-diagram-3"></i> Odontograma
-                </a>
-            </li>
-            <li class="nav-item" role="presentation">
                 <a class="nav-link {% if aba_ativa == 'financeiro' %}active{% endif %}"
                    href="{{ url_for('pacientes.listar_financeiro', paciente_id=paciente.id) }}"
                    role="tab">

@@ -5,8 +5,10 @@ Módulo com rotas relacionadas a receitas médicas.
 from flask import Blueprint, Response, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
-from app.extensions import receitas_db
+from app.models.clinica import Clinica  # Added import
+from app.models.paciente import Paciente  # Added import
 from app.models.receita import Medicamento, ModeloReceita
+from app.models.user import User
 
 receitas = Blueprint("receitas", __name__)
 
@@ -15,21 +17,31 @@ receitas = Blueprint("receitas", __name__)
 @login_required
 def index() -> Response:
     """Página principal de receitas."""
-    return render_template("receitas/index.html")
+    clinica = Clinica.get_instance()
+    return render_template("receitas/index.html", clinica=clinica)
 
 
 @receitas.route("/nova")
 @login_required
 def nova_receita() -> Response:
     """Página para criar nova receita."""
-    return render_template("receitas/formulario_receita.html")
+    pacientes = Paciente.query.order_by(Paciente.nome).all()
+
+    dentistas = User.query.filter_by(cargo="dentista").all()
+    clinica = Clinica.get_instance()
+    return render_template(
+        "receitas/formulario_receita.html",
+        pacientes=pacientes,
+        dentistas=dentistas,
+        clinica=clinica,
+    )
 
 
 @receitas.route("/medicamentos")
 @login_required
 def listar_medicamentos() -> Response:
     """Lista todos os medicamentos cadastrados."""
-    medicamentos = Medicamento.query.order_by(Medicamento.nome).all()
+    medicamentos = Medicamento.query.order_by(Medicamento.principio_ativo).all()
     return render_template("receitas/lista_medicamentos.html", medicamentos=medicamentos)
 
 
@@ -39,44 +51,87 @@ def visualizar_medicamento(medicamento_id: int) -> Response:
     """Visualiza detalhes de um medicamento específico."""
     medicamento = Medicamento.query.get_or_404(medicamento_id)
 
-    # Criando uma cópia dos dados para evitar problemas de perda de dados
+    # Todos os campos disponíveis do medicamento
     dados_medicamento = {
         "id": medicamento.id,
-        "nome": medicamento.nome,
+        "categoria": medicamento.categoria,
         "principio_ativo": medicamento.principio_ativo,
-        "concentracao": medicamento.concentracao,
-        "forma_farmaceutica": medicamento.forma_farmaceutica,
-        "posologia_padrao": medicamento.posologia_padrao,
-        "via_administracao": medicamento.via_administracao,
+        "nome_referencia": medicamento.nome_referencia,
+        "apresentacao": medicamento.apresentacao,
+        "posologia": medicamento.posologia,
+        "uso": medicamento.uso,
         "indicacoes": medicamento.indicacoes,
+        "mecanismo_acao": medicamento.mecanismo_acao,
         "contraindicacoes": medicamento.contraindicacoes,
         "efeitos_colaterais": medicamento.efeitos_colaterais,
-        "observacoes": medicamento.observacoes,
-        "odontologico": medicamento.odontologico,
+        "interacoes_medicamentosas": medicamento.interacoes_medicamentosas,
+        "risco_gravidez": medicamento.risco_gravidez,
+        "tipo_receita": medicamento.tipo_receita,
+        "alerta_principal": medicamento.alerta_principal,
+        "instrucao_compra": medicamento.instrucao_compra,
+        "observacao": medicamento.observacao,
     }
+    return render_template("receitas/visualizar_medicamento.html", medicamento=dados_medicamento)
 
-    # Passa os dados do medicamento como um objeto para o template
-    from types import SimpleNamespace
 
-    medicamento_obj = SimpleNamespace(**dados_medicamento)
+@receitas.route("/medicamentos/todos", methods=["GET"])
+@login_required
+def obter_todos_medicamentos() -> Response:
+    """Obtém todos os medicamentos para busca instantânea no frontend."""
+    medicamentos = Medicamento.query.order_by(Medicamento.principio_ativo).all()
 
-    return render_template("receitas/visualizar_medicamento.html", medicamento=medicamento_obj)
+    result = []
+    for med in medicamentos:
+        result.append(
+            {
+                "id": med.id,
+                "principio_ativo": med.principio_ativo or "",
+                "nome_referencia": med.nome_referencia or "",
+                "categoria": med.categoria or "",
+                "apresentacao": med.apresentacao or "",
+                "posologia": med.posologia or "",
+                "uso": med.uso or "",
+                "indicacoes": med.indicacoes or "",
+                "mecanismo_acao": med.mecanismo_acao or "",
+                "contraindicacoes": med.contraindicacoes or "",
+                "efeitos_colaterais": med.efeitos_colaterais or "",
+                "interacoes_medicamentosas": med.interacoes_medicamentosas or "",
+                "risco_gravidez": med.risco_gravidez or "",
+                "tipo_receita": med.tipo_receita or "",
+                "alerta_principal": med.alerta_principal or "",
+                "instrucao_compra": med.instrucao_compra or "",
+                "observacao": med.observacao or "",
+            }
+        )
+
+    return jsonify(result)
 
 
 @receitas.route("/medicamentos/buscar", methods=["GET"])
 @login_required
 def buscar_medicamentos() -> Response:
-    """Busca medicamentos por nome ou princípio ativo."""
+    """Busca medicamentos por qualquer campo relevante da tabela."""
     termo = request.args.get("termo", "")
     if termo:
-        medicamentos = (
-            Medicamento.query.filter(
-                (Medicamento.nome.ilike(f"%{termo}%"))
-                | (Medicamento.principio_ativo.ilike(f"%{termo}%"))
-            )
-            .order_by(Medicamento.nome)
-            .all()
+        filtro = (
+            (Medicamento.categoria.ilike(f"%{termo}%"))
+            | (Medicamento.principio_ativo.ilike(f"%{termo}%"))
+            | (Medicamento.nome_referencia.ilike(f"%{termo}%"))
+            | (Medicamento.apresentacao.ilike(f"%{termo}%"))
+            | (Medicamento.posologia.ilike(f"%{termo}%"))
+            | (Medicamento.uso.ilike(f"%{termo}%"))
+            | (Medicamento.indicacoes.ilike(f"%{termo}%"))
+            | (Medicamento.mecanismo_acao.ilike(f"%{termo}%"))
+            | (Medicamento.contraindicacoes.ilike(f"%{termo}%"))
+            | (Medicamento.efeitos_colaterais.ilike(f"%{termo}%"))
+            | (Medicamento.interacoes_medicamentosas.ilike(f"%{termo}%"))
+            | (Medicamento.risco_gravidez.ilike(f"%{termo}%"))
+            | (Medicamento.tipo_receita.ilike(f"%{termo}%"))
+            | (Medicamento.alerta_principal.ilike(f"%{termo}%"))
+            | (Medicamento.instrucao_compra.ilike(f"%{termo}%"))
+            | (Medicamento.observacao.ilike(f"%{termo}%"))
         )
+        medicamentos = Medicamento.query.filter(filtro).order_by(Medicamento.principio_ativo).all()
     else:
         medicamentos = []
 
@@ -87,10 +142,11 @@ def buscar_medicamentos() -> Response:
             result.append(
                 {
                     "id": med.id,
-                    "nome": med.nome,
                     "principio_ativo": med.principio_ativo,
-                    "concentracao": med.concentracao,
-                    "posologia_padrao": med.posologia_padrao,
+                    "nome_referencia": med.nome_referencia,
+                    "categoria": med.categoria,
+                    "apresentacao": med.apresentacao,
+                    "uso": med.uso,
                 }
             )
         return jsonify(result)
@@ -105,7 +161,25 @@ def buscar_medicamentos() -> Response:
 @login_required
 def listar_modelos() -> Response:
     """Lista todos os modelos de receita do usuário atual."""
-    modelos = ModeloReceita.query.filter_by(usuario_id=current_user.id).all()
+    try:
+        # Usar a sessão do banco de receitas através do multidb
+        from app.multidb import multidb
+
+        receitas_session = multidb.get_session("receitas")
+        if receitas_session:
+            modelos = (
+                receitas_session.query(ModeloReceita).filter_by(usuario_id=current_user.id).all()
+            )
+        else:
+            modelos = []
+    except Exception as e:
+        # Se a tabela não existe, retornar lista vazia
+        print(f"Erro ao acessar modelos: {e}")
+        modelos = []
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        # Retorna JSON para AJAX
+        return jsonify([{"id": m.id, "titulo": m.titulo, "conteudo": m.conteudo} for m in modelos])
     return render_template("receitas/modelos_receita.html", modelos=modelos)
 
 
@@ -120,12 +194,26 @@ def salvar_modelo() -> Response:
         flash("Título e conteúdo são obrigatórios.", "danger")
         return redirect(url_for("receitas.listar_modelos"))
 
-    modelo = ModeloReceita(titulo=titulo, conteudo=conteudo, usuario_id=current_user.id)
+    try:
+        from app.multidb import multidb
 
-    receitas_db.session.add(modelo)
-    receitas_db.session.commit()
+        receitas_session = multidb.get_session("receitas")
+        if receitas_session:
+            # Criar o modelo usando o construtor padrão do SQLAlchemy
+            modelo = ModeloReceita()
+            modelo.titulo = titulo
+            modelo.conteudo = conteudo
+            modelo.usuario_id = current_user.id
 
-    flash("Modelo de receita salvo com sucesso!", "success")
+            receitas_session.add(modelo)
+            receitas_session.commit()
+            flash("Modelo de receita salvo com sucesso!", "success")
+        else:
+            flash("Erro ao acessar banco de dados de receitas.", "danger")
+    except Exception as e:
+        print(f"Erro ao salvar modelo: {e}")
+        flash("Erro ao salvar modelo de receita.", "danger")
+
     return redirect(url_for("receitas.listar_modelos"))
 
 
@@ -133,38 +221,90 @@ def salvar_modelo() -> Response:
 @login_required
 def visualizar_modelo(modelo_id: int) -> Response:
     """Visualiza um modelo de receita."""
-    modelo = ModeloReceita.query.get_or_404(modelo_id)
-    if modelo.usuario_id != current_user.id:
-        flash("Você não tem permissão para acessar este modelo.", "danger")
+    try:
+        from app.multidb import multidb
+
+        receitas_session = multidb.get_session("receitas")
+        if receitas_session:
+            modelo = receitas_session.query(ModeloReceita).filter_by(id=modelo_id).first()
+            if not modelo:
+                flash("Modelo não encontrado.", "danger")
+                return redirect(url_for("receitas.listar_modelos"))
+
+            if modelo.usuario_id != current_user.id:
+                flash("Você não tem permissão para acessar este modelo.", "danger")
+                return redirect(url_for("receitas.listar_modelos"))
+
+            # Criando uma cópia dos dados para evitar problemas de perda de dados
+            dados_modelo = {
+                "id": modelo.id,
+                "titulo": modelo.titulo,
+                "conteudo": modelo.conteudo,
+                "usuario_id": modelo.usuario_id,
+            }
+
+            # Passa os dados do modelo como um objeto para o template
+            from types import SimpleNamespace
+
+            modelo_obj = SimpleNamespace(**dados_modelo)
+
+            return render_template("receitas/visualizar_modelo.html", modelo=modelo_obj)
+        else:
+            flash("Erro ao acessar banco de dados.", "danger")
+            return redirect(url_for("receitas.listar_modelos"))
+    except Exception as e:
+        print(f"Erro ao visualizar modelo: {e}")
+        flash("Erro ao visualizar modelo.", "danger")
         return redirect(url_for("receitas.listar_modelos"))
-
-    # Criando uma cópia dos dados para evitar problemas de perda de dados
-    dados_modelo = {
-        "id": modelo.id,
-        "titulo": modelo.titulo,
-        "conteudo": modelo.conteudo,
-        "usuario_id": modelo.usuario_id,
-    }
-
-    # Passa os dados do modelo como um objeto para o template
-    from types import SimpleNamespace
-
-    modelo_obj = SimpleNamespace(**dados_modelo)
-
-    return render_template("receitas/visualizar_modelo.html", modelo=modelo_obj)
 
 
 @receitas.route("/modelos/<int:modelo_id>/excluir", methods=["POST"])
 @login_required
 def excluir_modelo(modelo_id: int) -> Response:
     """Exclui um modelo de receita."""
-    modelo = ModeloReceita.query.get_or_404(modelo_id)
-    if modelo.usuario_id != current_user.id:
-        flash("Você não tem permissão para excluir este modelo.", "danger")
-        return redirect(url_for("receitas.listar_modelos"))
+    try:
+        from app.multidb import multidb
 
-    receitas_db.session.delete(modelo)
-    receitas_db.session.commit()
+        receitas_session = multidb.get_session("receitas")
+        if receitas_session:
+            modelo = receitas_session.query(ModeloReceita).filter_by(id=modelo_id).first()
+            if not modelo:
+                flash("Modelo não encontrado.", "danger")
+                return redirect(url_for("receitas.listar_modelos"))
 
-    flash("Modelo de receita excluído com sucesso!", "success")
+            if modelo.usuario_id != current_user.id:
+                flash("Você não tem permissão para excluir este modelo.", "danger")
+                return redirect(url_for("receitas.listar_modelos"))
+
+            receitas_session.delete(modelo)
+            receitas_session.commit()
+            flash("Modelo de receita excluído com sucesso!", "success")
+        else:
+            flash("Erro ao acessar banco de dados.", "danger")
+    except Exception as e:
+        print(f"Erro ao excluir modelo: {e}")
+        flash("Erro ao excluir modelo.", "danger")
+
     return redirect(url_for("receitas.listar_modelos"))
+
+
+@receitas.route("/api/dentistas/<int:dentista_id>/dados-receita")
+@login_required
+def obter_dados_dentista_receita(dentista_id: int):
+    """API para obter dados básicos do dentista para uso em receitas."""
+    try:
+        dentista = User.query.filter_by(id=dentista_id, cargo="dentista").first()
+        if not dentista:
+            return jsonify({"error": "Dentista não encontrado"}), 404
+
+        dados = {
+            "id": dentista.id,
+            "nome_completo": dentista.nome_completo,
+            "nome_profissional": dentista.nome_profissional,
+            "cro": dentista.cro or "",
+            "username": dentista.username,
+        }
+
+        return jsonify(dados)
+    except Exception:
+        return jsonify({"error": "Erro ao buscar dados do dentista"}), 500

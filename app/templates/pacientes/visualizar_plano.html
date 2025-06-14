@@ -15,37 +15,6 @@
         </div>
         <div class="row">
             <div class="col-md-8">
-                <!-- Odontograma -->
-                <div class="card shadow mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Odontograma</h5>
-                        <a href="{{ url_for('pacientes.odontograma', id=paciente.id) }}"
-                           class="btn btn-sm btn-primary">
-                            <i class="bi bi-pencil"></i> Editar Odontograma
-                        </a>
-                    </div>
-                    <div class="card-body">
-                        <div class="canvas-container text-center">
-                            <canvas id="planoCanvas"
-                                    width="648"
-                                    height="450"
-                                    data-paciente-id="{{ paciente.id }}"
-                                    data-paciente-nome="{{ paciente.nome }}"
-                                    data-plano-id="Plano #{{ plano.id }}"
-                                    data-dentista="{{ current_user.nome_completo }}"
-                                    data-dentista-responsavel="{{ dentista.nome_completo if dentista else '-' }}"
-                                    data-data="{{ now|date }}"
-                                    data-observacoes="{{ plano.observacoes|default('', true) |e }}"
-                                    data-odontograma-json="{{ plano.odontograma_data|tojson|safe if plano.odontograma_data else '' }}">
-                            </canvas>
-                        </div>
-                        {% if not odontograma %}
-                            <div class="alert alert-info mt-3">
-                                <i class="bi bi-info-circle"></i> Nenhum odontograma encontrado para este paciente. Clique em "Editar Odontograma" para criar um.
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
                 <div class="card shadow mb-4">
                     <div class="card-header">
                         <h5 class="mb-0">Detalhes do Plano</h5>
@@ -384,19 +353,7 @@
 {% endblock %}
 {% block scripts %}
     {{ super() }}
-    <script src="{{ url_for('static', filename='js/odontograma/constants.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/odontograma/rect.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/odontograma/textBox.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/odontograma/tooth.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/odontograma/damage.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/odontograma/menuItem.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/odontograma/collisionHandler.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/odontograma/renderer.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/odontograma/odontogramaGenerator.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/odontograma/settings.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/odontograma/engine.js') }}"></script>
     <script src="{{ url_for('static', filename='js/procedimentos.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/odontograma-plano.js') }}"></script>
     {% set tratamentos_for_js = {} %}
     {% for categoria in categorias %}
         {% set categoria_key = categoria.id | string %}
@@ -429,80 +386,6 @@
     window.tratamentosData = tratamentosDataFromElement;
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize odontograma viewer
-        const canvas = document.getElementById('planoCanvas'); // Corrected canvas ID
-        if (canvas) {
-            const engine = new Engine();
-            engine.setCanvas(canvas);
-            engine.init();
-            // engine.setReadOnly(true); // Or setViewMode(true) depending on Engine's API
-            if (typeof engine.setViewMode === 'function') {
-                engine.setViewMode(true); // Prefer setViewMode if available
-            } else if (typeof engine.setReadOnly === 'function') {
-                engine.setReadOnly(true);
-            }
-
-            // Carrega os dados do paciente
-            engine.loadPatientData(
-                canvas.dataset.dentista,
-                canvas.dataset.pacienteNome,
-                canvas.dataset.pacienteId,
-                canvas.dataset.planoId,
-                canvas.dataset.data,
-                canvas.dataset.dentistaResponsavel,
-                canvas.dataset.observacoes,
-                "" // especificações
-            );
-
-            const odontogramaJsonAttribute = canvas.dataset.odontogramaJson;
-            let loadedFromAttribute = false;
-
-            if (odontogramaJsonAttribute) { // Check if attribute string is not empty
-                try {
-                    const savedData = JSON.parse(odontogramaJsonAttribute);
-                    // Ensure savedData is meaningful (not null, and if object, not empty or just null)
-                    if (savedData && (typeof savedData !== 'object' || Object.keys(savedData).length > 0)) {
-                        engine.loadOdontogramaData(savedData);
-                        console.log('Odontograma do plano carregado com sucesso from attribute');
-                        loadedFromAttribute = true;
-                    } else {
-                         console.log('Odontograma data from attribute was null, empty object, or invalid after parsing.');
-                    }
-                } catch (error) { // Catch errors from JSON.parse if attribute is not valid JSON (e.g. was an empty string)
-                    console.error('Erro ao carregar o odontograma do plano from attribute:', error, 'Raw data:', odontogramaJsonAttribute);
-                }
-            }
-
-            if (!loadedFromAttribute) {
-                // Se não há dados do odontograma específicos para este plano via atributo, tenta carregar o mais recente do paciente
-                fetch("{{ url_for('pacientes.get_ultimo_odontograma_json', id=paciente.id) }}")
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok: ' + response.statusText);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.success && data.dados) {
-                        try {
-                            const odontogramaData = JSON.parse(data.dados); // Assuming data.dados is a JSON string
-                            engine.loadOdontogramaData(odontogramaData);
-                            console.log('Odontograma mais recente do paciente carregado com sucesso via fetch');
-                        } catch (error) {
-                            console.error('Erro ao processar o odontograma mais recente do paciente via fetch:', error);
-                        }
-                    } else if (data.success && !data.dados) {
-                        console.log('Nenhum odontograma anterior encontrado para este paciente via fetch.');
-                    } else {
-                        console.log('Não foi possível buscar odontograma anterior ou nenhum foi encontrado via fetch.', data);
-                    }
-                })
-                .catch(error => console.error('Erro ao buscar odontograma via fetch:', error));
-            }
-        } else {
-            console.warn("Elemento canvas com ID 'planoCanvas' não encontrado para o odontograma.");
-        }
-
         // Other DOMContentLoaded logic from procedimentos.js or other scripts might be here
     });
     </script>

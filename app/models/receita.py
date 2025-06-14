@@ -2,48 +2,58 @@
 Este módulo define os modelos relacionados a receitas médicas.
 """
 
-from sqlalchemy import Boolean, Column, Integer, String, Text
+from sqlalchemy import Column, Integer, String, Text
 
 from app.extensions import db
 
 
 class Medicamento(db.Model):
     """
-    Modelo para representar medicamentos que podem ser prescritos.
+    Modelo para representar medicamentos conforme a estrutura da tabela SQL.
 
     Atributos:
         id (int): Identificador único do medicamento
-        nome (str): Nome do medicamento
+        categoria (str): Categoria do medicamento
         principio_ativo (str): Princípio ativo do medicamento
-        concentracao (str): Concentração do medicamento (ex: 500mg, 10mg/ml)
-        forma_farmaceutica (str): Forma farmacêutica (comprimido, solução, etc)
-        posologia_padrao (str): Instruções padrão de posologia
-        via_administracao (str): Via de administração (oral, tópica, etc)
+        nome_referencia (str): Nome de referência do medicamento
+        apresentacao (str): Apresentação do medicamento
+        posologia (str): Instruções de posologia
+        uso (str): Indicação de uso
         indicacoes (str): Indicações comuns para o medicamento
+        mecanismo_acao (str): Mecanismo de ação do medicamento
         contraindicacoes (str): Contraindicações do medicamento
         efeitos_colaterais (str): Efeitos colaterais comuns
-        observacoes (str): Observações adicionais
-        odontologico (bool): Indica se é um medicamento comumente usado em odontologia
+        interacoes_medicamentosas (str): Interações medicamentosas
+        risco_gravidez (str): Risco na gravidez
+        tipo_receita (str): Tipo de receita necessária
+        alerta_principal (str): Alerta principal sobre o medicamento
+        instrucao_compra (str): Instruções para compra
+        observacao (str): Observações adicionais
     """
 
     __tablename__ = "medicamentos"
     __bind_key__ = "receitas"
 
     id = Column(Integer, primary_key=True)
-    nome = Column(String(100), nullable=False, index=True)
+    categoria = Column(String(100), nullable=False)
     principio_ativo = Column(String(100), nullable=False)
-    concentracao = Column(String(50))
-    forma_farmaceutica = Column(String(50))
-    posologia_padrao = Column(Text, nullable=False)
-    via_administracao = Column(String(30))
+    nome_referencia = Column(String(100))
+    apresentacao = Column(String(100), nullable=False)
+    posologia = Column(Text, nullable=False)
+    uso = Column(String(50))
     indicacoes = Column(Text)
+    mecanismo_acao = Column(Text)
     contraindicacoes = Column(Text)
     efeitos_colaterais = Column(Text)
-    observacoes = Column(Text)
-    odontologico = Column(Boolean, default=True)
+    interacoes_medicamentosas = Column(Text)
+    risco_gravidez = Column(String(20))
+    tipo_receita = Column(String(50))
+    alerta_principal = Column(Text)
+    instrucao_compra = Column(Text)
+    observacao = Column(Text)
 
     def __repr__(self):
-        return f"<Medicamento {self.nome}>"
+        return f"<Medicamento {self.principio_ativo}>"
 
 
 class ModeloReceita(db.Model):

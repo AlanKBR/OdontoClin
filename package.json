@@ -1,7 +1,7 @@
 {
-    "name": "odontograma",
+    "name": "seu-projeto-dental",
     "version": "1.0.0",
-    "description": "Odontograma JavaScript components",
+    "description": "Descrição do seu projeto dental",
     "scripts": {
         "lint:js": "eslint app/static/js/**/*.js --fix",
         "test": "echo \"Error: no test specified\" && exit 1"

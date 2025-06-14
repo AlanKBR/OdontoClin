@@ -5,7 +5,7 @@ from flask_wtf import FlaskForm
 # Removed unused imports but left them commented for reference in case needed later
 # from werkzeug.security import check_password_hash, generate_password_hash
 from wtforms import PasswordField, SelectField, StringField, SubmitField
-from wtforms.validators import DataRequired, Email, EqualTo, Length
+from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional
 
 from app import extensions  # Changed from 'from app.extensions import users_db'
 from app.models.user import User
@@ -36,6 +36,13 @@ class RegistrationForm(CSRFDisabledForm):
     username = StringField("Nome de usuário", validators=[DataRequired(), Length(min=3, max=64)])
     email = StringField("Email", validators=[DataRequired(), Email()])
     nome_completo = StringField("Nome completo", validators=[DataRequired(), Length(max=128)])
+    cro = StringField(
+        "CRO",
+        validators=[
+            Length(min=4, max=20, message="CRO deve ter entre 4 e 20 caracteres"),
+            Optional(),
+        ],
+    )
     cargo = SelectField(
         "Cargo",
         choices=[
@@ -50,9 +57,18 @@ class RegistrationForm(CSRFDisabledForm):
     )
     submit = SubmitField("Cadastrar")
 
+    def validate(self, extra_validators=None) -> bool:
+        initial_validation = super().validate(extra_validators)
+        if not initial_validation:
+            return False
+        if self.cargo.data == "dentista" and not self.cro.data:
+            self.cro.errors.append("CRO é obrigatório para dentistas.")
+            return False
+        return True
+
 
 @auth.route("/login", methods=["GET", "POST"])
-def login():
+def login() -> str:
     if current_user.is_authenticated:
         return redirect(url_for("main.dashboard"))
 
@@ -71,7 +87,7 @@ def login():
 
 @auth.route("/logout")
 @login_required
-def logout():
+def logout() -> str:
     logout_user()
     flash("Você saiu do sistema.", "info")
     return redirect(url_for("auth.login"))
@@ -79,7 +95,7 @@ def logout():
 
 @auth.route("/register", methods=["GET", "POST"])
 @login_required
-def register():
+def register() -> str:
     form = RegistrationForm()
     if form.validate_on_submit():
         # Use extensions.users_db for queries and session operations
@@ -96,6 +112,7 @@ def register():
             username=form.username.data,
             email=form.email.data,
             nome_completo=form.nome_completo.data,
+            cro=form.cro.data or None,
             cargo=form.cargo.data,
         )
         user.set_password(form.password.data)

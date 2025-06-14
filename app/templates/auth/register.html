@@ -45,11 +45,11 @@
                                     {% endif %}
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="cargo" class="form-label">Cargo</label>
-                                    {{ form.cargo(class="form-select", id="cargo") }}
-                                    {% if form.cargo.errors %}
+                                    <label for="cro" class="form-label">CRO</label>
+                                    {{ form.cro(class="form-control", id="cro", placeholder="CRO do profissional") }}
+                                    {% if form.cro.errors %}
                                         <div class="text-danger">
-                                            {% for error in form.cargo.errors %}<small>{{ error }}</small>{% endfor %}
+                                            {% for error in form.cro.errors %}<small>{{ error }}</small>{% endfor %}
                                         </div>
                                     {% endif %}
                                 </div>

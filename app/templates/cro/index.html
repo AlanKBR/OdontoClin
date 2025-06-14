@@ -10,10 +10,13 @@
     <div class="row">
         <div class="col-md-7">
             <h4>Configurar Chave de API</h4>
+            <p class="text-muted small">
+                Para obter sua chave de API, acesse o site
+                <a href="https://www.consultacro.com.br/index/sis_api" target="_blank" rel="noopener noreferrer">ConsultaCRO API</a>.
+            </p>
             <form method="POST" action="{{ url_for('cro.index', api_type=(api_type_selected if api_type_selected else 'cro'), uf=(uf_selected if uf_selected else 'todos')) }}">
                 {{ csrf_token }}
                 <div class="mb-3">
-                    <label for="api_key" class="form-label">Sua Chave de API (Token)</label>
                     <input type="password" class="form-control" id="api_key" name="api_key" value="{{ current_api_key if current_api_key else '' }}" placeholder="Insira sua chave de API">
                     {% if api_key_configured %}
                         <div class="form-text text-success">Chave de API configurada.</div>
@@ -21,7 +24,7 @@
                         <div class="form-text text-warning">Chave de API ainda não configurada.</div>
                     {% endif %}
                 </div>
-                <button type="submit" class="btn btn-primary"><i class="bi bi-key-fill"></i> Salvar Chave de API</button>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-key-fill"></i> Salvar Chave</button>
             </form>
         </div>
     </div>

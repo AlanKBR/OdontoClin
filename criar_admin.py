@@ -1,8 +1,10 @@
-from app import create_app, extensions
+﻿from app import create_app, extensions
 from app.models.user import User
 
 
-def criar_usuario_admin(username, email, nome_completo, senha):
+def criar_usuario_admin(
+    username: str, nome_completo: str, nome_profissional: str, senha: str, cro: str = None
+) -> None:
     """Cria um usuário administrador inicial para o sistema."""
     app = create_app()
 
@@ -14,7 +16,14 @@ def criar_usuario_admin(username, email, nome_completo, senha):
             return
 
         # Criar o usuário administrador
-        usuario = User(username=username, email=email, nome_completo=nome_completo, cargo="admin")
+        usuario = User(
+            username=username,
+            nome_completo=nome_completo,
+            cro=cro or None,
+            nome_profissional=nome_profissional,
+            cargo="admin",  # Define o cargo como admin
+            is_active=True,
+        )
         usuario.set_password(senha)
 
         extensions.users_db.add(usuario)
@@ -30,8 +39,10 @@ if __name__ == "__main__":
     print("-" * 60)
 
     username = input("Username: ")
-    email = input("Email: ")
     nome_completo = input("Nome completo: ")
+    nome_profissional = input("Nome profissional (como aparecerá no receituário): ")
+    cro = input("CRO (obrigatório para profissionais): ")
+    cro = cro if cro.strip() else None
     senha = getpass.getpass("Senha: ")
     confirmacao_senha = getpass.getpass("Confirme a senha: ")
 
@@ -40,4 +51,4 @@ if __name__ == "__main__":
     elif len(senha) < 8:
         print("ERRO: A senha deve ter pelo menos 8 caracteres!")
     else:
-        criar_usuario_admin(username, email, nome_completo, senha)
+        criar_usuario_admin(username, nome_completo, nome_profissional, senha, cro)

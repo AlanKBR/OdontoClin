@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ medicamento.nome }} | OdontoClinic{% endblock %}
+{% block title %}{{ medicamento.principio_ativo }} | OdontoClinic{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -25,62 +25,73 @@
         <div class="col-lg-8">
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">{{ medicamento.nome }}</h5>
+                    <h5 class="card-title mb-0">{{ medicamento.principio_ativo }}
+                        {% if medicamento.nome_referencia %}<small class="text-white-50">({{ medicamento.nome_referencia }})</small>{% endif %}
+                    </h5>
                 </div>
                 <div class="card-body">
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <h6 class="fw-bold">Princípio Ativo:</h6>
-                            <p>{{ medicamento.principio_ativo }}</p>
+                            <h6 class="fw-bold">Categoria:</h6>
+                            <p>{{ medicamento.categoria }}</p>
                         </div>
                         <div class="col-md-6">
-                            <h6 class="fw-bold">Concentração:</h6>
-                            <p>{{ medicamento.concentracao or 'Não especificada' }}</p>
+                            <h6 class="fw-bold">Apresentação:</h6>
+                            <p>{{ medicamento.apresentacao }}</p>
                         </div>
                     </div>
-
                     <div class="row mb-3">
-                        <div class="col-md-6">
-                            <h6 class="fw-bold">Forma Farmacêutica:</h6>
-                            <p>{{ medicamento.forma_farmaceutica or 'Não especificada' }}</p>
+                        <div class="col-md-4">
+                            <h6 class="fw-bold">Uso:</h6>
+                            <p>{{ medicamento.uso or 'Não especificado' }}</p>
                         </div>
-                        <div class="col-md-6">
-                            <h6 class="fw-bold">Via de Administração:</h6>
-                            <p>{{ medicamento.via_administracao or 'Não especificada' }}</p>
+                        <div class="col-md-4">
+                            <h6 class="fw-bold">Tipo de Receita:</h6>
+                            <p>{{ medicamento.tipo_receita or 'Não especificado' }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="fw-bold">Risco na Gravidez:</h6>
+                            <p>{{ medicamento.risco_gravidez or 'Não especificado' }}</p>
                         </div>
                     </div>
-
                     <div class="row mb-3">
                         <div class="col-12">
-                            <h6 class="fw-bold">Posologia Padrão:</h6>
+                            <h6 class="fw-bold">Posologia:</h6>
                             <div class="card card-body bg-light">
-                                {{ medicamento.posologia_padrao|replace('\n', '<br>')|safe }}
+                                {{ medicamento.posologia|replace('\n', '<br>')|safe }}
                             </div>
                         </div>
                     </div>
-
+                    {% if medicamento.instrucao_compra %}
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6 class="fw-bold">Instrução de Compra:</h6>
+                            <div class="card card-body bg-light">
+                                {{ medicamento.instrucao_compra|replace('\n', '<br>')|safe }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if medicamento.observacao %}
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6 class="fw-bold">Observação:</h6>
+                            <div class="card card-body bg-light">
+                                {{ medicamento.observacao|replace('\n', '<br>')|safe }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                     {% if medicamento.indicacoes %}
                     <div class="row mb-3">
                         <div class="col-12">
                             <h6 class="fw-bold">Indicações:</h6>
-                            <div class="card card-body bg-light">
+                            <div class="card card-body bg-info bg-opacity-25">
                                 {{ medicamento.indicacoes|replace('\n', '<br>')|safe }}
                             </div>
                         </div>
                     </div>
                     {% endif %}
-
-                    {% if medicamento.contraindicacoes %}
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <h6 class="fw-bold">Contraindicações:</h6>
-                            <div class="card card-body bg-danger bg-opacity-25">
-                                {{ medicamento.contraindicacoes|replace('\n', '<br>')|safe }}
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-
                     {% if medicamento.efeitos_colaterais %}
                     <div class="row mb-3">
                         <div class="col-12">
@@ -91,13 +102,42 @@
                         </div>
                     </div>
                     {% endif %}
-
-                    {% if medicamento.observacoes %}
+                    {% if medicamento.contraindicacoes %}
                     <div class="row mb-3">
                         <div class="col-12">
-                            <h6 class="fw-bold">Observações:</h6>
-                            <div class="card card-body bg-info bg-opacity-25">
-                                {{ medicamento.observacoes|replace('\n', '<br>')|safe }}
+                            <h6 class="fw-bold">Contraindicações:</h6>
+                            <div class="card card-body bg-danger bg-opacity-25">
+                                {{ medicamento.contraindicacoes|replace('\n', '<br>')|safe }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if medicamento.alerta_principal %}
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6 class="fw-bold text-danger">Alerta Principal:</h6>
+                            <div class="card card-body bg-danger bg-opacity-10">
+                                {{ medicamento.alerta_principal|replace('\n', '<br>')|safe }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if medicamento.interacoes_medicamentosas %}
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6 class="fw-bold">Interações Medicamentosas:</h6>
+                            <div class="card card-body bg-light">
+                                {{ medicamento.interacoes_medicamentosas|replace('\n', '<br>')|safe }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if medicamento.mecanismo_acao %}
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <h6 class="fw-bold">Mecanismo de Ação:</h6>
+                            <div class="card card-body bg-light">
+                                {{ medicamento.mecanismo_acao|replace('\n', '<br>')|safe }}
                             </div>
                         </div>
                     </div>
@@ -105,7 +145,6 @@
                 </div>
             </div>
         </div>
-
         <div class="col-lg-4">
             <div class="card mb-4">
                 <div class="card-header">
@@ -129,7 +168,6 @@
                     </p>
                 </div>
             </div>
-
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0"><i class="bi bi-prescription2"></i> Usar na Receita</h5>

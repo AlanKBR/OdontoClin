@@ -1,4 +1,5 @@
 import json
+from calendar import month_name
 from datetime import datetime
 
 from flask import (  # current_app,  # Unused import; session,  # Unused import
@@ -29,8 +30,7 @@ from wtforms import (
 )
 from wtforms.validators import DataRequired, Email, Length, Optional
 
-from app.extensions import db  # Changed from \'from app import db\'
-from app.models.odontograma import Odontograma
+from app.extensions import db  # Changed from \\\'from app import db\\\'
 from app.models.paciente import Paciente  # Ensure Paciente is imported
 from app.models.paciente import (
     Anamnese,
@@ -308,13 +308,26 @@ def listar_pacientes() -> str:  # Add return type annotation
     # Ordenar por nome por padrão
     query = query.order_by(Paciente.nome)
 
-    pacientes = query.paginate(page=page, per_page=10)
+    pacientes_pagination = query.paginate(page=page, per_page=10)
 
-    return render_template(
-        "pacientes/lista_pacientes.html",
-        pacientes=pacientes,
-        busca=busca,
-    )
+    # Detectar se é dispositivo móvel
+    is_mobile = getattr(request, "MOBILE", False)
+
+    if is_mobile:
+        # Para mobile, usar template específico
+        return render_template(
+            "mobile/lista_pacientes.html",
+            pacientes=pacientes_pagination.items,
+            pagination=pacientes_pagination,
+            busca=busca,
+        )
+    else:
+        # Para desktop, usar template original
+        return render_template(
+            "pacientes/lista_pacientes.html",
+            pacientes=pacientes_pagination,
+            busca=busca,
+        )
 
 
 @pacientes.route("/pacientes/novo", methods=["GET", "POST"])
@@ -342,9 +355,14 @@ def novo_paciente() -> str:  # Add return type annotation
         # Verificar se CPF já existe (se foi fornecido)
         if form.cpf.data and Paciente.query.filter_by(cpf=form.cpf.data).first():
             flash("CPF já cadastrado em outro paciente", "danger")
-            return render_template(
-                "pacientes/formulario_paciente.html", form=form, titulo="Novo Paciente"
+            # Detectar se é dispositivo móvel
+            is_mobile = getattr(request, "MOBILE", False)
+            template = (
+                "mobile/formulario_paciente.html"
+                if is_mobile
+                else "pacientes/formulario_paciente.html"
             )
+            return render_template(template, form=form, titulo="Novo Paciente")
 
         db.session.add(paciente)
         db.session.commit()
@@ -360,18 +378,30 @@ def novo_paciente() -> str:  # Add return type annotation
         flash("Paciente cadastrado com sucesso!", "success")
         return redirect(url_for("pacientes.visualizar_paciente", paciente_id=paciente.id))
 
-    return render_template("pacientes/formulario_paciente.html", form=form, titulo="Novo Paciente")
+    # Detectar se é dispositivo móvel
+    is_mobile = getattr(request, "MOBILE", False)
+    template = (
+        "mobile/formulario_paciente.html" if is_mobile else "pacientes/formulario_paciente.html"
+    )
+    return render_template(template, form=form, titulo="Novo Paciente")
 
 
 @pacientes.route("/pacientes/<int:paciente_id>")
 @login_required
 def visualizar_paciente(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
-    # We no longer need to pass CSRF tokens or forms for deletion
-    # since we're handling it with JavaScript
-    return render_template(
-        "pacientes/visualizar_paciente.html", paciente=paciente, aba_ativa="ficha"
-    )
+
+    # Detectar se é dispositivo móvel
+    is_mobile = getattr(request, "MOBILE", False)
+
+    if is_mobile:
+        # Para mobile, usar template específico
+        return render_template("mobile/visualizar_paciente.html", paciente=paciente)
+    else:
+        # Para desktop, usar template original
+        return render_template(
+            "pacientes/visualizar_paciente.html", paciente=paciente, aba_ativa="ficha"
+        )
 
 
 @pacientes.route("/pacientes/<int:paciente_id>/editar", methods=["GET", "POST"])
@@ -390,11 +420,14 @@ def editar_paciente(paciente_id: int):  # Add type hint
             ).first()
             if existe_cpf:
                 flash("CPF já cadastrado em outro paciente", "danger")
-                return render_template(
-                    "pacientes/formulario_paciente.html",
-                    form=form,
-                    titulo="Editar Paciente",
+                # Detectar se é dispositivo móvel
+                is_mobile = getattr(request, "MOBILE", False)
+                template = (
+                    "mobile/formulario_paciente.html"
+                    if is_mobile
+                    else "pacientes/formulario_paciente.html"
                 )
+                return render_template(template, form=form, titulo="Editar Paciente")
 
         # Atualizar dados
         paciente.data_nascimento = datetime.strptime(form.data_nascimento.data, "%d/%m/%Y").date()
@@ -404,9 +437,12 @@ def editar_paciente(paciente_id: int):  # Add type hint
         flash("Dados do paciente atualizados com sucesso!", "success")
         return redirect(url_for("pacientes.visualizar_paciente", paciente_id=paciente.id))
 
-    return render_template(
-        "pacientes/formulario_paciente.html", form=form, titulo="Editar Paciente"
+    # Detectar se é dispositivo móvel
+    is_mobile = getattr(request, "MOBILE", False)
+    template = (
+        "mobile/formulario_paciente.html" if is_mobile else "pacientes/formulario_paciente.html"
     )
+    return render_template(template, form=form, titulo="Editar Paciente")
 
 
 @pacientes.route("/pacientes/<int:paciente_id>/financeiro")
@@ -427,23 +463,37 @@ def listar_financeiro(paciente_id: int):  # Add type hint
         lancamento.valor
         for lancamento in lancamentos
         if lancamento.tipo == "Débito" and lancamento.status != "Cancelado"
-    )
-    # Saldo agora representa tudo que foi pago pelo paciente (somente créditos com status "Pago")
+    )  # Saldo agora representa tudo que foi pago pelo paciente (somente créditos com status "Pago")
     saldo = sum(
         lancamento.valor
         for lancamento in lancamentos
         if lancamento.tipo == "Crédito" and lancamento.status == "Pago"
     )
 
-    return render_template(
-        "pacientes/financeiro.html",
-        paciente=paciente,
-        lancamentos=lancamentos,
-        total_credito=total_credito,
-        total_debito=total_debito,
-        saldo=saldo,
-        aba_ativa="financeiro",
-    )
+    # Detectar se é dispositivo móvel
+    is_mobile = getattr(request, "MOBILE", False)
+
+    if is_mobile:
+        # Para mobile, usar template específico
+        return render_template(
+            "mobile/financeiro.html",
+            paciente=paciente,
+            lancamentos=lancamentos,
+            total_credito=total_credito,
+            total_debito=total_debito,
+            saldo=saldo,
+        )
+    else:
+        # Para desktop, usar template original
+        return render_template(
+            "pacientes/financeiro.html",
+            paciente=paciente,
+            lancamentos=lancamentos,
+            total_credito=total_credito,
+            total_debito=total_debito,
+            saldo=saldo,
+            aba_ativa="financeiro",
+        )
 
 
 @pacientes.route("/pacientes/<int:paciente_id>/excluir", methods=["POST"])
@@ -520,9 +570,17 @@ def listar_planos(paciente_id: int):  # Add type hint
         .all()
     )
 
-    return render_template(
-        "pacientes/planos.html", paciente=paciente, planos=planos, aba_ativa="plano"
-    )
+    # Detectar se é dispositivo móvel
+    is_mobile = getattr(request, "MOBILE", False)
+
+    if is_mobile:
+        # Para mobile, usar template específico
+        return render_template("mobile/planos.html", paciente=paciente, planos=planos)
+    else:
+        # Para desktop, usar template original
+        return render_template(
+            "pacientes/planos.html", paciente=paciente, planos=planos, aba_ativa="plano"
+        )
 
 
 @pacientes.route("/pacientes/<int:paciente_id>/planos/novo", methods=["GET", "POST"])
@@ -545,13 +603,15 @@ def novo_plano(paciente_id: int):  # Add type hint
         flash("Plano de tratamento criado com sucesso!", "success")
         return redirect(
             url_for("pacientes.visualizar_plano", paciente_id=paciente.id, plano_id=plano.id)
-        )
+        )  # Detectar se é dispositivo móvel
+    is_mobile = getattr(request, "MOBILE", False)
+    template = "mobile/formulario_plano.html" if is_mobile else "pacientes/formulario_plano.html"
 
     return render_template(
-        "pacientes/formulario_plano.html",
+        template,
         form=form,
         paciente=paciente,
-        aba_ativa="plano",
+        aba_ativa="plano" if not is_mobile else None,
     )
 
 
@@ -566,33 +626,43 @@ def visualizar_plano(paciente_id: int, plano_id: int):  # Add type hints
         abort(404)
 
     procedimentos = Procedimento.query.filter_by(plano_id=plano.id).all()
-    dentista = User.query.get(plano.dentista_id) if plano.dentista_id else None
-
-    # Buscar o último odontograma do paciente (se existir)
-    ultimo_odontograma = (
-        Odontograma.query.filter_by(paciente_id=paciente_id)
-        .order_by(Odontograma.data_criacao.desc())
-        .first()
-    )
-
-    # Buscar categorias de tratamento para o modal de novo procedimento
+    dentista = None
+    if plano.dentista_id:
+        dentista = User.query.get(
+            plano.dentista_id
+        )  # Buscar categorias de tratamento para o modal de novo procedimento
     categorias = CategoriaTratamento.query.order_by(CategoriaTratamento.nome).all()
     # Carregamento ansioso dos tratamentos
     for categoria in categorias:
         tratamentos = Tratamento.query.filter_by(categoria_id=categoria.id, ativo=True).all()
         categoria.tratamentos = tratamentos
 
-    return render_template(
-        "pacientes/visualizar_plano.html",
-        paciente=paciente,
-        plano=plano,
-        procedimentos=procedimentos,
-        dentista=dentista,
-        categorias=categorias,
-        odontograma=ultimo_odontograma,
-        now=datetime.now(),
-        aba_ativa="plano",
-    )
+    # Detectar se é dispositivo móvel
+    is_mobile = getattr(request, "MOBILE", False)
+
+    if is_mobile:
+        # Para mobile, usar template específico
+        return render_template(
+            "mobile/visualizar_plano.html",
+            paciente=paciente,
+            plano=plano,
+            procedimentos=procedimentos,
+            dentista=dentista,
+            categorias=categorias,
+            now=datetime.now(),
+        )
+    else:
+        # Para desktop, usar template original
+        return render_template(
+            "pacientes/visualizar_plano.html",
+            paciente=paciente,
+            plano=plano,
+            procedimentos=procedimentos,
+            dentista=dentista,
+            categorias=categorias,
+            now=datetime.now(),
+            aba_ativa="plano",
+        )
 
 
 @pacientes.route(
@@ -998,89 +1068,32 @@ def novo_historico(paciente_id: int):  # Add type hint
     )
 
 
-@pacientes.route("/paciente/<int:id>/odontograma")
+@pacientes.route("/pacientes/aniversarios")
 @login_required
-def odontograma(id: int):  # Add type hint
-    """Exibe o odontograma do paciente."""
-    paciente = Paciente.query.get_or_404(id)
-
-    # Busca o último odontograma do paciente (se existir)
-    ultimo_odontograma = (
-        Odontograma.query.filter_by(paciente_id=id)
-        .order_by(Odontograma.data_criacao.desc())
-        .first()
+def aniversarios():
+    """
+    Exibe os pacientes que fazem aniversário no mês atual.
+    """
+    mes_atual = datetime.now().month
+    pacientes_mes = (
+        Paciente.query.filter(db.extract("month", Paciente.data_nascimento) == mes_atual)
+        .order_by(db.extract("day", Paciente.data_nascimento))
+        .all()
     )
-
-    return render_template(
-        "pacientes/odontograma.html",
-        paciente=paciente,
-        odontograma=ultimo_odontograma,
-        aba_ativa="odontograma",
-    )
-
-
-@pacientes.route("/paciente/<int:id>/salvar_odontograma", methods=["POST"])
-@login_required
-def salvar_odontograma(id: int):  # Add type hint
-    """Salva o odontograma do paciente."""
-    paciente = Paciente.query.get_or_404(id)
-
-    if not request.is_json:
-        return jsonify({"success": False, "message": "Dados inválidos"})
-
-    dados = request.get_json()
-
-    try:
-        # Verifica se já existe um odontograma para este paciente
-        odontograma = Odontograma.query.filter_by(paciente_id=id).first()
-
-        if odontograma:
-            # Atualiza o odontograma existente
-            odontograma.dados = json.dumps(dados)
-            odontograma.criado_por = current_user.id
-            odontograma.data_criacao = datetime.utcnow()
-        else:
-            # Cria um novo odontograma
-            odontograma = Odontograma(
-                paciente_id=paciente.id, dados=json.dumps(dados), criado_por=current_user.id
-            )
-            db.session.add(odontograma)
-
-        db.session.commit()
-        return jsonify({"success": True})
-
-    except SQLAlchemyError as e:
-        db.session.rollback()
-        return jsonify({"success": False, "message": str(e)})
-
-
-@pacientes.route("/paciente/<int:id>/get_ultimo_odontograma")
-@login_required
-def get_ultimo_odontograma_json(id: int):  # Add type hint
-    """Retorna o último odontograma do paciente em formato JSON."""
-    # Busca o último odontograma do paciente (se existir)
-    ultimo_odontograma = (
-        Odontograma.query.filter_by(paciente_id=id)
-        .order_by(Odontograma.data_criacao.desc())
-        .first()
-    )
-
-    if ultimo_odontograma:
-        return jsonify({"success": True, "dados": ultimo_odontograma.dados})
+    nome_mes = month_name[mes_atual].capitalize()
+    is_mobile = getattr(request, "MOBILE", False)
+    if is_mobile:
+        return render_template(
+            "mobile/aniversarios.html",
+            pacientes=pacientes_mes,
+            nome_mes=nome_mes,
+        )
     else:
-        return jsonify({"success": False, "message": "Nenhum odontograma encontrado"})
-
-
-@pacientes.route("/list_all", methods=["GET"])
-@login_required
-def list_all_pacientes() -> Response:
-    """Retorna uma lista de todos os pacientes (id e nome) para popular selects."""
-    try:
-        pacientes_list = Paciente.query.order_by(Paciente.nome).all()
-        return jsonify([{"id": p.id, "nome": p.nome} for p in pacientes_list])
-    except Exception as e:
-        # Log the exception e
-        return jsonify({"error": str(e)}), 500
+        return render_template(
+            "pacientes/aniversarios.html",
+            pacientes=pacientes_mes,
+            nome_mes=nome_mes,
+        )
 
 
 # Rota para buscar pacientes por nome (para autocomplete)
@@ -1098,3 +1111,27 @@ def search_pacientes() -> Response:
     )
     nomes_pacientes = [paciente.nome for paciente in pacientes_encontrados]
     return jsonify(nomes_pacientes)
+
+
+@pacientes.route("/api/pacientes/<int:paciente_id>/dados-receita")
+@login_required
+def obter_dados_paciente_receita(paciente_id: int):
+    """API para obter dados básicos do paciente para uso em receitas."""
+    try:
+        paciente = Paciente.query.get_or_404(paciente_id)  # Formatar data de nascimento
+        data_nascimento = ""
+        if paciente.data_nascimento:
+            data_nascimento = paciente.data_nascimento.strftime("%d/%m/%Y")
+
+        dados = {
+            "id": paciente.id,
+            "nome": paciente.nome,
+            "data_nascimento": data_nascimento,
+            "cpf": paciente.cpf or "",
+            "telefone": paciente.telefone or "",
+            "email": paciente.email or "",
+        }
+
+        return jsonify(dados)
+    except Exception:
+        return jsonify({"error": "Paciente não encontrado"}), 404

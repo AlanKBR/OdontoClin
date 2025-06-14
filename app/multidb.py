@@ -72,7 +72,6 @@ class MultiDB:
                 "SQLAlchemy instance not provided to MultiDB. " "Call init_app with db_instance."
             )
 
-        from app.models.odontograma import Odontograma
         from app.models.paciente import (
             Anamnese,
             Ficha,
@@ -82,6 +81,7 @@ class MultiDB:
             PlanoTratamento,
             Procedimento,
         )
+        from app.models.receita import Medicamento, ModeloReceita
         from app.models.tratamento import CategoriaTratamento, Tratamento
         from app.models.user import User
 
@@ -103,7 +103,6 @@ class MultiDB:
                     Procedimento,
                     Historico,
                     Financeiro,
-                    Odontograma,
                 ]
             ],
         )
@@ -112,6 +111,12 @@ class MultiDB:
         self.db_instance.Model.metadata.create_all(
             bind=self.engines["tratamentos"],
             tables=[t.__table__ for t in [CategoriaTratamento, Tratamento]],
+        )
+
+        # Cria tabelas no banco de dados de receitas
+        self.db_instance.Model.metadata.create_all(
+            bind=self.engines["receitas"],
+            tables=[t.__table__ for t in [Medicamento, ModeloReceita]],
         )
 
     def get_engine(self, name: str) -> Optional[Engine]:

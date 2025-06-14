@@ -9,7 +9,9 @@ export default [
       "app/static/js/vendor/",
       "dist/",
       "build/",
-      "node_modules/"
+      "node_modules/",
+      ".venv/",
+      "app/templates/**/*.js"
     ]
   },
 

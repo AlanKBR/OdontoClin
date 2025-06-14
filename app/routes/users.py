@@ -2,7 +2,7 @@ from flask import Blueprint, abort, flash, redirect, render_template, request, u
 from flask_login import current_user, login_required
 from flask_wtf import FlaskForm
 from wtforms import HiddenField, PasswordField, SelectField, StringField, SubmitField
-from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional
+from wtforms.validators import DataRequired, EqualTo, Length, Optional
 
 from app import extensions
 from app.models.user import User
@@ -19,8 +19,19 @@ class CSRFDisabledForm(FlaskForm):
 # Formulário para criar/editar usuário
 class UserForm(CSRFDisabledForm):
     username = StringField("Nome de usuário", validators=[DataRequired(), Length(min=3, max=64)])
-    email = StringField("Email", validators=[DataRequired(), Email()])
     nome_completo = StringField("Nome completo", validators=[DataRequired(), Length(max=128)])
+    cro = StringField(
+        "CRO",
+        validators=[
+            Length(min=4, max=20, message="CRO deve ter entre 4 e 20 caracteres"),
+            Optional(),
+        ],
+    )
+    nome_profissional = StringField(
+        "Nome profissional", validators=[DataRequired(), Length(max=120)]
+    )
+    password = PasswordField("Senha", validators=[Optional(), Length(min=8)])
+    confirm_password = PasswordField("Confirmar senha", validators=[EqualTo("password")])
     cargo = SelectField(
         "Cargo",
         choices=[
@@ -28,6 +39,25 @@ class UserForm(CSRFDisabledForm):
             ("secretaria", "Secretária/Recepcionista"),
             ("admin", "Administrador"),
         ],
+        validators=[DataRequired()],
+    )
+    id = HiddenField("ID")
+    submit = SubmitField("Salvar")
+
+
+# Formulário para edição de perfil (sem o campo cargo)
+class UserProfileForm(CSRFDisabledForm):
+    username = StringField("Nome de usuário", validators=[DataRequired(), Length(min=3, max=64)])
+    nome_completo = StringField("Nome completo", validators=[DataRequired(), Length(max=128)])
+    cro = StringField(
+        "CRO",
+        validators=[
+            Length(min=4, max=20, message="CRO deve ter entre 4 e 20 caracteres"),
+            Optional(),
+        ],
+    )
+    nome_profissional = StringField(
+        "Nome profissional", validators=[DataRequired(), Length(max=120)]
     )
     password = PasswordField("Senha", validators=[Optional(), Length(min=8)])
     confirm_password = PasswordField("Confirmar senha", validators=[EqualTo("password")])
@@ -35,9 +65,14 @@ class UserForm(CSRFDisabledForm):
     submit = SubmitField("Salvar")
 
 
+def admin_required() -> None:
+    if not current_user.is_authenticated or current_user.cargo != "admin":
+        abort(403)
+
+
 @users.route("/")
 @login_required
-def listar_usuarios():
+def listar_usuarios() -> str:
     # Lista todos os usuários
     usuarios = extensions.users_db.query(User).all()
     return render_template("users/lista_usuarios.html", usuarios=usuarios)
@@ -45,7 +80,8 @@ def listar_usuarios():
 
 @users.route("/novo", methods=["GET", "POST"])
 @login_required
-def novo_usuario():
+def novo_usuario() -> str:
+    admin_required()
     form = UserForm()
 
     if form.validate_on_submit():
@@ -56,19 +92,22 @@ def novo_usuario():
                 "users/formulario_usuario.html", form=form, titulo="Novo Usuário"
             )
 
-        # Verifica se o email já existe
-        if extensions.users_db.query(User).filter_by(email=form.email.data).first():
-            flash("Email já está cadastrado", "danger")
-            return render_template(
-                "users/formulario_usuario.html", form=form, titulo="Novo Usuário"
-            )
+        # Verifica se o CRO já existe (se informado)
+        if form.cro.data:
+            if extensions.users_db.query(User).filter_by(cro=form.cro.data).first():
+                flash("CRO já está cadastrado", "danger")
+                return render_template(
+                    "users/formulario_usuario.html", form=form, titulo="Novo Usuário"
+                )
 
         # Cria novo usuário
         novo_usuario = User(
             username=form.username.data,
-            email=form.email.data,
             nome_completo=form.nome_completo.data,
-            cargo=form.cargo.data,
+            cro=form.cro.data or None,
+            nome_profissional=form.nome_profissional.data,
+            cargo=form.cargo.data,  # Salvar o cargo
+            is_active=True,
         )
 
         # Definir a senha apenas se for fornecida
@@ -91,7 +130,8 @@ def novo_usuario():
 
 @users.route("/editar/<int:id>", methods=["GET", "POST"])
 @login_required
-def editar_usuario(id):
+def editar_usuario(id: int) -> str:
+    admin_required()
     usuario = extensions.users_db.query(User).get(id)
     if usuario is None:
         abort(404)
@@ -101,9 +141,10 @@ def editar_usuario(id):
         form = UserForm(
             id=usuario.id,
             username=usuario.username,
-            email=usuario.email,
             nome_completo=usuario.nome_completo,
-            cargo=usuario.cargo,
+            cro=usuario.cro,
+            nome_profissional=usuario.nome_profissional,
+            cargo=usuario.cargo,  # Usa o campo cargo diretamente
         )
     else:
         form = UserForm()
@@ -119,19 +160,23 @@ def editar_usuario(id):
                 "users/formulario_usuario.html", form=form, titulo="Editar Usuário"
             )
 
-        # Verifica se o email já existe para outro usuário
-        existing_email = extensions.users_db.query(User).filter_by(email=form.email.data).first()
-        if existing_email and existing_email.id != usuario.id:
-            flash("Email já está cadastrado", "danger")
-            return render_template(
-                "users/formulario_usuario.html", form=form, titulo="Editar Usuário"
-            )
+        # Verifica se o CRO já existe para outro usuário (se informado)
+        if form.cro.data:
+            existing_cro = extensions.users_db.query(User).filter_by(cro=form.cro.data).first()
+            if existing_cro and existing_cro.id != usuario.id:
+                flash("CRO já está cadastrado", "danger")
+                return render_template(
+                    "users/formulario_usuario.html", form=form, titulo="Editar Usuário"
+                )
 
         # Atualiza os dados do usuário
         usuario.username = form.username.data
-        usuario.email = form.email.data
         usuario.nome_completo = form.nome_completo.data
-        usuario.cargo = form.cargo.data
+        usuario.cro = form.cro.data or None
+        usuario.nome_profissional = form.nome_profissional.data
+        usuario.cargo = form.cargo.data  # Salvar o cargo
+        # Removido is_admin, pois agora usamos apenas o campo cargo
+        usuario.is_active = True
 
         # Atualiza a senha apenas se for fornecida
         if form.password.data:
@@ -144,22 +189,41 @@ def editar_usuario(id):
     return render_template("users/formulario_usuario.html", form=form, titulo="Editar Usuário")
 
 
+@users.route("/excluir/<int:user_id>", methods=["POST"])
+@login_required
+def delete_user(user_id: int) -> str:
+    admin_required()
+    user_to_delete = extensions.users_db.query(User).get(user_id)
+    if user_to_delete is None:
+        abort(404)
+
+    if user_to_delete.id == current_user.id:
+        flash("Você não pode excluir seu próprio usuário.", "danger")
+        return redirect(url_for("users.listar_usuarios"))
+
+    # Exclui apenas o usuário do banco users.db
+    extensions.users_db.delete(user_to_delete)
+    extensions.users_db.commit()
+    flash("Usuário excluído com sucesso!", "success")
+    return redirect(url_for("users.listar_usuarios"))
+
+
 @users.route("/perfil", methods=["GET", "POST"])
 @login_required
-def meu_perfil():
+def meu_perfil() -> str:
     usuario = extensions.users_db.query(User).get(current_user.id)
 
     # Inicializa o formulário com os dados do usuário
     if request.method == "GET":
-        form = UserForm(
+        form = UserProfileForm(
             id=usuario.id,
             username=usuario.username,
-            email=usuario.email,
             nome_completo=usuario.nome_completo,
-            cargo=usuario.cargo,
+            cro=usuario.cro,
+            nome_profissional=usuario.nome_profissional,
         )
     else:
-        form = UserForm()
+        form = UserProfileForm()
 
     if form.validate_on_submit():
         # Verifica se o username já existe para outro usuário
@@ -170,18 +234,18 @@ def meu_perfil():
             flash("Nome de usuário já existe", "danger")
             return render_template("users/meu_perfil.html", form=form)
 
-        # Verifica se o email já existe para outro usuário
-        existing_email = extensions.users_db.query(User).filter_by(email=form.email.data).first()
-        if existing_email and existing_email.id != usuario.id:
-            flash("Email já está cadastrado", "danger")
-            return render_template("users/meu_perfil.html", form=form)
+        # Verifica se o CRO já existe para outro usuário (se informado)
+        if form.cro.data:
+            existing_cro = extensions.users_db.query(User).filter_by(cro=form.cro.data).first()
+            if existing_cro and existing_cro.id != usuario.id:
+                flash("CRO já está cadastrado", "danger")
+                return render_template("users/meu_perfil.html", form=form)
 
         # Atualiza os dados do usuário
         usuario.username = form.username.data
-        usuario.email = form.email.data
         usuario.nome_completo = form.nome_completo.data
-
-        # O cargo não pode ser alterado pelo próprio usuário
+        usuario.cro = form.cro.data or None
+        usuario.nome_profissional = form.nome_profissional.data
 
         # Atualiza a senha apenas se for fornecida
         if form.password.data:
@@ -192,32 +256,3 @@ def meu_perfil():
         return redirect(url_for("users.meu_perfil"))
 
     return render_template("users/meu_perfil.html", form=form)
-
-
-@users.route("/visualizar/<int:id>")
-@login_required
-def visualizar_usuario(id):
-    usuario = extensions.users_db.query(User).get(id)
-    if usuario is None:
-        abort(404)
-    return render_template("users/visualizar_usuario.html", usuario=usuario)
-
-
-@users.route("/excluir/<int:id>", methods=["POST"])
-@login_required
-def excluir_usuario(id):
-    usuario = extensions.users_db.query(User).get(id)
-    if usuario is None:
-        abort(404)
-
-    # Impede a exclusão do próprio usuário logado
-    if usuario.id == current_user.id:
-        flash("Você não pode excluir seu próprio usuário!", "danger")
-        return redirect(url_for("users.listar_usuarios"))
-
-    # Remove o usuário do banco de dados
-    extensions.users_db.delete(usuario)
-    extensions.users_db.commit()
-
-    flash("Usuário excluído com sucesso!", "success")
-    return redirect(url_for("users.listar_usuarios"))

@@ -57,22 +57,22 @@
                             <table class="table table-striped table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Nome</th>
                                         <th>Princípio Ativo</th>
-                                        <th>Concentração</th>
-                                        <th>Forma Farmacêutica</th>
-                                        <th>Via de Administração</th>
+                                        <th>Nome de Referência</th>
+                                        <th>Categoria</th>
+                                        <th>Apresentação</th>
+                                        <th>Uso</th>
                                         <th>Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for medicamento in medicamentos %}
                                         <tr>
-                                            <td>{{ medicamento.nome }}</td>
                                             <td>{{ medicamento.principio_ativo }}</td>
-                                            <td>{{ medicamento.concentracao }}</td>
-                                            <td>{{ medicamento.forma_farmaceutica }}</td>
-                                            <td>{{ medicamento.via_administracao }}</td>
+                                            <td>{{ medicamento.nome_referencia }}</td>
+                                            <td>{{ medicamento.categoria }}</td>
+                                            <td>{{ medicamento.apresentacao }}</td>
+                                            <td>{{ medicamento.uso }}</td>
                                             <td>
                                                 <a href="{{ url_for('receitas.visualizar_medicamento', medicamento_id=medicamento.id) }}"
                                                    class="btn btn-sm btn-outline-primary">

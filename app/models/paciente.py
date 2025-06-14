@@ -85,7 +85,7 @@ class PlanoTratamento(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     paciente_id = db.Column(db.Integer, db.ForeignKey("pacientes.id"), nullable=False)
-    dentista_id = db.Column(db.Integer)  # Removed db.ForeignKey("users.id")
+    dentista_id = db.Column(db.Integer)  # Apenas o ID, sem relacionamento ORM
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
     descricao = db.Column(db.Text, nullable=False)
     # Pendente, Em andamento, Concluído, Cancelado
@@ -99,12 +99,6 @@ class PlanoTratamento(db.Model):
         backref="plano_tratamento",
         lazy="dynamic",
         cascade="all, delete-orphan",
-    )
-    # Add relationship for dentista (User)
-    dentista = db.relationship(
-        "User",
-        primaryjoin="foreign(PlanoTratamento.dentista_id) == remote(User.id)",
-        backref="planos_tratamento_criados",
     )
 
 
@@ -145,18 +139,11 @@ class Historico(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     paciente_id = db.Column(db.Integer, db.ForeignKey("pacientes.id"), nullable=False)
-    dentista_id = db.Column(db.Integer)  # Removed db.ForeignKey("users.id")
+    dentista_id = db.Column(db.Integer)  # Apenas o ID, sem relacionamento ORM
     data = db.Column(db.DateTime, default=datetime.utcnow)
     descricao = db.Column(db.Text, nullable=False)
     procedimentos_realizados = db.Column(db.Text)
     observacoes = db.Column(db.Text)
-
-    # Add relationship for dentista (User)
-    dentista = db.relationship(
-        "User",
-        primaryjoin="foreign(Historico.dentista_id) == remote(User.id)",
-        backref="historicos_registrados",
-    )
 
 
 class Financeiro(db.Model):
