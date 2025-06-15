@@ -5,6 +5,7 @@ Main application file for OdontoClin.
 import datetime
 import secrets
 from datetime import timezone
+from typing import Callable
 
 # Import the application factory function
 from app import create_app  # pylint: disable=import-self
@@ -28,8 +29,9 @@ def inject_now() -> dict[str, datetime.datetime]:
 
 
 @app.context_processor
-def inject_csp_nonce() -> dict[str, "callable[[], str]"]:
+def inject_csp_nonce() -> dict[str, Callable[[], str]]:
     """
+    Provides a Content Security Policy (CSP) nonce for Jinja2 templates.
     Provides a Content Security Policy (CSP) nonce for Jinja2 templates.
 
     This function generates a unique nonce (number used once) that can be

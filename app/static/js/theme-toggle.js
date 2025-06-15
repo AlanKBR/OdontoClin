@@ -11,21 +11,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Update UI elements based on current theme
         if (currentTheme === 'dark-mode') {
-            // Update theme toggle button in navbar
-            if(themeToggleButton) themeToggleButton.innerHTML = '☀️'; // Sun icon
+            // Update theme toggle button in sidebar
+            if(themeToggleButton) {
+                const icon = themeToggleButton.querySelector('.menu-icon i');
+                const text = themeToggleButton.querySelector('.menu-text');
+                if(icon) icon.className = 'bi bi-sun';
+                if(text) text.textContent = 'Modo Claro';
+            }
 
             // Update settings page checkbox if present
             if(darkModeToggle) darkModeToggle.checked = true;
         } else {
-            // Update theme toggle button in navbar
-            if(themeToggleButton) themeToggleButton.innerHTML = '🌙'; // Moon icon
+            // Update theme toggle button in sidebar
+            if(themeToggleButton) {
+                const icon = themeToggleButton.querySelector('.menu-icon i');
+                const text = themeToggleButton.querySelector('.menu-text');
+                if(icon) icon.className = 'bi bi-moon';
+                if(text) text.textContent = 'Modo Escuro';
+            }
 
             // Update settings page checkbox if present
             if(darkModeToggle) darkModeToggle.checked = false;
         }
     }
 
-    // Navbar toggle button
+    // Sidebar toggle button
     if (themeToggleButton) {
         themeToggleButton.addEventListener('click', () => {
             toggleTheme();
@@ -62,7 +72,12 @@ function setDarkTheme() {
     const themeToggleButton = document.getElementById('theme-toggle-button');
     const darkModeToggle = document.getElementById('darkModeToggle');
 
-    if(themeToggleButton) themeToggleButton.innerHTML = '☀️'; // Sun icon
+    if(themeToggleButton) {
+        const icon = themeToggleButton.querySelector('.menu-icon i');
+        const text = themeToggleButton.querySelector('.menu-text');
+        if(icon) icon.className = 'bi bi-sun';
+        if(text) text.textContent = 'Modo Claro';
+    }
     if(darkModeToggle) darkModeToggle.checked = true;
 }
 
@@ -75,6 +90,11 @@ function setLightTheme() {
     const themeToggleButton = document.getElementById('theme-toggle-button');
     const darkModeToggle = document.getElementById('darkModeToggle');
 
-    if(themeToggleButton) themeToggleButton.innerHTML = '🌙'; // Moon icon
+    if(themeToggleButton) {
+        const icon = themeToggleButton.querySelector('.menu-icon i');
+        const text = themeToggleButton.querySelector('.menu-text');
+        if(icon) icon.className = 'bi bi-moon';
+        if(text) text.textContent = 'Modo Escuro';
+    }
     if(darkModeToggle) darkModeToggle.checked = false;
 }

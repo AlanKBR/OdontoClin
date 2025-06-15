@@ -248,12 +248,25 @@ body {
     background: var(--hover-color);
     color: var(--primary-color);
     text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+/* Hover para sidebar retraída */
+.modern-sidebar.collapsed .menu-link:hover {
+    justify-content: center;
+    border-radius: 12px;
+    margin: 0.25rem;
 }
 
 .menu-link.active {
     background: var(--active-color);
     color: var(--primary-color);
     border-right: 3px solid var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
 }
 
 .menu-link.active::before {
@@ -264,6 +277,67 @@ body {
     bottom: 0;
     width: 4px;
     background: var(--primary-color);
+}
+
+/* Melhor centralização visual para links ativos */
+.menu-link.active .menu-icon {
+    background: rgba(36, 112, 220, 0.1);
+    border-radius: 8px;
+    transition: all var(--transition-duration) var(--transition-timing);
+}
+
+.menu-link.active .menu-text {
+    font-weight: 600;
+    letter-spacing: -0.025em;
+}
+
+/* Centralização específica para sidebar retraída */
+.modern-sidebar.collapsed .menu-link.active .menu-icon {
+    background: rgba(36, 112, 220, 0.15);
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    margin: 0 auto;
+}
+
+/* Animação suave para transições de estado ativo */
+.menu-link {
+    transition: all var(--transition-duration) var(--transition-timing);
+}
+
+.menu-link .menu-icon {
+    transition: all var(--transition-duration) var(--transition-timing);
+}
+
+.menu-link .menu-text {
+    transition: all var(--transition-duration) var(--transition-timing);
+}
+
+/* Centralização para sidebar retraída */
+.modern-sidebar.collapsed .menu-link.active {
+    justify-content: center;
+    border-right: none;
+    padding: 0.75rem 0;
+    margin: 0.25rem;
+    border-radius: 12px;
+    background: var(--active-color);
+}
+
+.modern-sidebar.collapsed .menu-link.active::before {
+    display: none;
+}
+
+/* Centralização visual melhorada para sidebar expandida */
+.menu-link.active {
+    position: relative;
+}
+
+.menu-link.active .menu-icon {
+    color: var(--primary-color);
+}
+
+.menu-link.active .menu-text {
+    color: var(--primary-color);
 }
 
 .menu-icon {
@@ -340,13 +414,21 @@ body {
 }
 
 .submenu .menu-link {
-    padding-left: 3.5rem;
-    font-size: 0.875rem;
-    background: var(--surface-color);
+    padding: 0.75rem 1.5rem; /* Match main menu-link */
+    font-size: 1rem; /* Match main menu-link */
+    background: none; /* Remove special background */
+    border: none; /* Remove special border */
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    transition: all var(--transition-duration) var(--transition-timing);
 }
 
 .submenu .menu-link:hover {
     background: var(--hover-color);
+    color: var(--primary-color);
 }
 
 .submenu .menu-link.active {
@@ -355,8 +437,20 @@ body {
     border-right: 3px solid var(--primary-color);
 }
 
-.modern-sidebar.collapsed .submenu {
-    display: none;
+.submenu .menu-link .menu-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    margin-right: 0.75rem;
+}
+
+.submenu .menu-link .menu-text {
+    flex: 1;
+    white-space: nowrap;
+    opacity: 1;
 }
 
 /* User Profile Section */
@@ -364,6 +458,7 @@ body {
     padding: 1rem;
     border-top: 1px solid var(--border-color);
     background: var(--background-color);
+    position: relative; /* Importante para o posicionamento do popup */
 }
 
 .user-profile {
@@ -375,6 +470,7 @@ body {
     background: var(--surface-color);
     transition: all var(--transition-duration) var(--transition-timing);
     cursor: pointer;
+    position: relative; /* Importante para o posicionamento do popup */
 }
 
 .user-profile:hover {
@@ -418,15 +514,174 @@ body {
     white-space: nowrap;
 }
 
+/* Theme toggle button in sidebar */
+.theme-toggle-btn {
+    background: none !important;
+    border: none !important;
+    width: 100% !important;
+    text-align: left !important;
+    cursor: pointer;
+    transition: all var(--transition-duration) var(--transition-timing);
+}
+
+.theme-toggle-btn:hover {
+    background: var(--hover-color) !important;
+    color: var(--primary-color) !important;
+}
+
+.theme-toggle-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+/* User actions popup */
+.user-profile {
+    position: relative;
+}
+
+.user-menu-indicator {
+    opacity: 0;
+    transition: opacity var(--transition-duration) var(--transition-timing);
+    margin-left: auto;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.user-profile:hover .user-menu-indicator {
+    opacity: 1;
+}
+
+.modern-sidebar.collapsed .user-menu-indicator {
+    opacity: 1;
+    margin-left: 0;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.user-actions-popup {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 6px rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 3000;
+    margin-bottom: 12px;
+    min-width: 200px;
+    pointer-events: none; /* Importante para evitar problemas de hover */
+}
+
+.user-actions-popup.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto; /* Reabilita eventos quando visível */
+}
+
+.popup-arrow {
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 16px;
+    height: 16px;
+    background: var(--background-color);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-left: none;
+    transform: translateX(-50%) rotate(45deg);
+}
+
+.popup-content {
+    padding: 0.75rem 0;
+}
+
+.popup-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.15s ease;
+}
+
+.popup-item:hover {
+    background: var(--hover-color);
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+.popup-item-danger {
+    color: #dc2626;
+}
+
+.popup-item-danger:hover {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.popup-item i {
+    font-size: 1rem;
+    width: 16px;
+    text-align: center;
+}
+
+.popup-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 0.5rem 0;
+}
+
+/* Collapsed sidebar popup adjustments */
+.modern-sidebar.collapsed .user-actions-popup {
+    left: 100%;
+    right: auto;
+    bottom: 50%;
+    transform: translateY(50%);
+    margin-bottom: 0;
+    margin-left: 12px;
+}
+
+.modern-sidebar.collapsed .user-actions-popup.show {
+    transform: translateY(50%);
+}
+
+.modern-sidebar.collapsed .popup-arrow {
+    left: -8px;
+    bottom: 50%;
+    transform: translateY(50%) rotate(-45deg);
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    border-right: none;
+}
+
+/* Dark mode adjustments for popup */
+[data-theme="dark"] .popup-item-danger:hover {
+    background: #450a0a;
+    color: #fca5a5;
+}
+
 /* Main Content Adjustment */
 .main-content {
     margin-left: var(--sidebar-width);
     transition: margin-left var(--transition-duration) var(--transition-timing);
     min-height: 100vh;
-    padding: 2rem;
+    padding: 1.5rem;
+    margin-top: 0; /* Remove top margin since no navbar */
 }
 
-.sidebar-collapsed+.main-content {
+.sidebar-collapsed + .main-content {
     margin-left: var(--sidebar-collapsed-width);
 }
 
@@ -446,7 +701,7 @@ body {
         margin-left: 0;
     }
 
-    .sidebar-collapsed+.main-content {
+    .sidebar-collapsed + .main-content {
         margin-left: 0;
     }
 
