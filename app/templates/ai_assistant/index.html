@@ -1,0 +1,534 @@
+{% extends "base.html" %}
+{% block title %}
+    Assistente de IA - OdontoClin
+{% endblock title %}
+{% block extra_css %}
+    <style>
+    .ai-chat-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+    
+    .ai-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        text-align: center;
+    }
+    
+    .ai-status {
+        background: #f8f9fa;
+        padding: 10px 20px;
+        border-bottom: 1px solid #dee2e6;
+        font-size: 0.9em;
+    }
+    
+    .chat-messages {
+        height: 400px;
+        overflow-y: auto;
+        padding: 20px;
+        background: #f8f9fa;
+    }
+    
+    .message {
+        margin-bottom: 15px;
+        padding: 12px;
+        border-radius: 10px;
+        max-width: 80%;
+    }
+    
+    .message.user {
+        background: #007bff;
+        color: white;
+        margin-left: auto;
+        text-align: right;
+    }
+    
+    .message.ai {
+        background: white;
+        border: 1px solid #dee2e6;
+        margin-right: auto;
+    }
+    
+    .message-timestamp {
+        font-size: 0.8em;
+        opacity: 0.7;
+        margin-top: 5px;
+    }
+    
+    .chat-input-container {
+        padding: 20px;
+        background: white;
+        border-top: 1px solid #dee2e6;
+    }
+    
+    .chat-input {
+        width: 100%;
+        min-height: 60px;
+        resize: vertical;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 10px;
+        font-family: inherit;
+    }
+    
+    .chat-actions {
+        margin-top: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .loading {
+        text-align: center;
+        padding: 20px;
+        color: #6c757d;
+    }
+    
+    .ai-disclaimer {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 5px;
+        padding: 15px;
+        margin: 20px;
+        font-size: 0.9em;
+        color: #856404;
+    }
+    
+    .model-info {
+        background: #e9ecef;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        font-size: 0.9em;
+    }
+    
+    .btn-ai {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: opacity 0.3s;
+    }
+    
+    .btn-ai:hover {
+        opacity: 0.9;
+    }
+    
+    .btn-ai:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    /* Dark mode specific styles for AI Assistant */
+    .dark-mode .ai-chat-container {
+        background: #1e1e1e;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+    
+    .dark-mode .ai-header {
+        background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+    }
+    
+    .dark-mode .ai-status {
+        background: #2d3748;
+        border-bottom: 1px solid #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .dark-mode .chat-messages {
+        background: #2d3748;
+    }
+    
+    .dark-mode .message.user {
+        background: #4299e1;
+    }
+    
+    .dark-mode .message.ai {
+        background: #1a202c;
+        border: 1px solid #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .dark-mode .message.ai.error {
+        background: #742a2a;
+        border: 1px solid #c53030;
+        color: #fed7d7;
+    }
+    
+    .dark-mode .chat-input-container {
+        background: #1e1e1e;
+        border-top: 1px solid #4a5568;
+    }
+    
+    .dark-mode .chat-input {
+        background: #2d3748;
+        border: 1px solid #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .dark-mode .chat-input:focus {
+        background: #2d3748;
+        border-color: #4299e1;
+        color: #e2e8f0;
+        outline: none;
+        box-shadow: 0 0 0 0.2rem rgba(66, 153, 225, 0.25);
+    }
+    
+    .dark-mode .chat-input::placeholder {
+        color: #a0aec0;
+    }
+    
+    .dark-mode .ai-disclaimer {
+        background: #744210;
+        border: 1px solid #975a16;
+        color: #fbb6ce;
+    }
+    
+    .dark-mode .model-info {
+        background: #2d3748;
+        color: #e2e8f0;
+    }
+    
+    .dark-mode .loading {
+        color: #a0aec0;
+    }
+    
+    .dark-mode .text-muted {
+        color: #a0aec0 !important;
+    }
+    
+    .dark-mode .badge-success {
+        background-color: #38a169;
+    }
+    
+    .dark-mode .badge-warning {
+        background-color: #d69e2e;
+    }
+    
+    /* Additional improvements for dark mode visibility */
+    .dark-mode .btn-outline-secondary {
+        color: #a0aec0;
+        border-color: #4a5568;
+    }
+    
+    .dark-mode .btn-outline-secondary:hover {
+        background-color: #4a5568;
+        border-color: #a0aec0;
+        color: #fff;
+    }
+    
+    .dark-mode .container-fluid {
+        background-color: transparent;
+    }
+    
+    /* Improve readability for timestamps */
+    .dark-mode .message-timestamp {
+        color: #a0aec0;
+    }
+    
+    /* Better focus states for dark mode */
+    .dark-mode .chat-input:focus,
+    .dark-mode .btn-ai:focus {
+        box-shadow: 0 0 0 0.2rem rgba(66, 153, 225, 0.25);
+        outline: none;
+    }
+    </style>
+{% endblock extra_css %}
+{% block content %}
+    <div class="container-fluid mt-3">
+        <div class="ai-chat-container">
+            <!-- Header -->
+            <div class="ai-header">
+                <h2>
+                    <i class="fas fa-robot"></i> Assistente de IA Odontológica
+                </h2>
+                <p class="mb-0">Versão Beta - BioMistral Local</p>
+            </div>
+            <!-- Status Bar -->
+            <div class="ai-status">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Status:</strong>
+                        <span id="ai-status"
+                              class="badge badge-{{ 'success' if model_info.initialized else 'warning' }}">
+                            {{ 'Inicializado' if model_info.initialized else 'Não Inicializado' }}
+                        </span>
+                    </div>
+                    <div class="col-md-6 text-right">
+                        <a href="{{ url_for("ai_assistant.config") }}"
+                           class="btn btn-outline-secondary btn-sm mr-2">
+                            <i class="fas fa-cog"></i> Configurar IA
+                        </a>
+                        <strong>Modelo:</strong> {{ model_info.model_name or 'N/A' }}
+                    </div>
+                </div>
+            </div>
+            <!-- Model Info -->
+            {% if model_info.enabled %}
+                <div class="model-info">
+                    <strong>Informações do Modelo:</strong>
+                    <br>
+                    Dependências: {{ 'Disponíveis' if model_info.dependencies_available else 'Não Disponíveis' }}
+                    <br>
+                    Inicializado: {{ 'Sim' if model_info.initialized else 'Não' }}
+                    <br>
+                    {% if not model_info.initialized %}
+                        <div class="alert alert-info mt-2" style="margin-bottom: 0;">
+                            <i class="fas fa-info-circle"></i>
+                            Para iniciar o assistente de IA, acesse as
+                            <a href="{{ url_for("ai_assistant.config") }}" class="alert-link">configurações</a>
+                            e selecione o método de processamento adequado.
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+            <!-- Disclaimer -->
+            <div class="ai-disclaimer">
+                <strong><i class="fas fa-exclamation-triangle"></i> Aviso Importante:</strong>
+                Este assistente de IA é uma ferramenta de apoio para fins informativos e educacionais.
+                Não substitui o julgamento clínico profissional. Sempre consulte protocolos estabelecidos
+                e sua experiência clínica para tomar decisões de tratamento.
+            </div>
+            <!-- Chat Messages -->
+            <div class="chat-messages" id="chat-messages">
+                {% if chat_history %}
+                    {% for item in chat_history %}
+                        <div class="message user">
+                            <div>{{ item.query }}</div>
+                            <div class="message-timestamp">{{ item.timestamp }}</div>
+                        </div>
+                        <div class="message ai">
+                            <div>{{ item.response|safe }}</div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-comments fa-3x mb-3"></i>
+                        <h5>Inicie uma conversa com o assistente de IA</h5>
+                        <p>Faça perguntas sobre odontologia, tratamentos, diagnósticos e muito mais.</p>
+                    </div>
+                {% endif %}
+            </div>
+            <!-- Chat Input -->
+            <div class="chat-input-container">
+                <form id="chat-form">
+                    <textarea id="chat-input"
+                              class="chat-input"
+                              placeholder="Digite sua pergunta aqui... (Ex: Quais são as indicações para uso de amoxicilina em odontologia?)"
+                              {% if not model_info.enabled or not model_info.dependencies_available %}disabled{% endif %}></textarea>
+                    <div class="chat-actions">
+                        <div>
+                            <button type="button"
+                                    id="clear-history-btn"
+                                    class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-trash"></i> Limpar Histórico
+                            </button>
+                        </div>
+                        <div>
+                            <button type="submit"
+                                    id="send-btn"
+                                    class="btn-ai"
+                                    {% if not model_info.enabled or not model_info.dependencies_available %}disabled{% endif %}>
+                                <i class="fas fa-paper-plane"></i> Enviar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+{% block extra_js %}
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatForm = document.getElementById('chat-form');
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    const chatMessages = document.getElementById('chat-messages');
+    const clearHistoryBtn = document.getElementById('clear-history-btn');
+    const statusSpan = document.getElementById('ai-status');
+    
+    // Debug: Check if elements exist and their initial state
+    console.log('AI Assistant Debug:', {
+        chatInput: chatInput ? 'found' : 'not found',
+        chatInputDisabled: chatInput ? chatInput.disabled : 'N/A',
+        sendBtn: sendBtn ? 'found' : 'not found',
+        sendBtnDisabled: sendBtn ? sendBtn.disabled : 'N/A'
+    });
+    
+    // Ensure input is focusable and enabled if dependencies are available
+    if (chatInput && !chatInput.disabled) {
+        chatInput.focus();
+        console.log('Chat input focused and ready');
+    }
+    
+    // Auto-resize textarea
+    chatInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = this.scrollHeight + 'px';
+    });
+    
+    // Send message
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        sendMessage();
+    });
+    
+    // Send on Ctrl+Enter
+    chatInput.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    
+    // Clear history
+    clearHistoryBtn.addEventListener('click', function() {
+        if (confirm('Tem certeza que deseja limpar o histórico de conversas?')) {
+            clearHistory();
+        }
+    });
+    
+    function sendMessage() {
+        const query = chatInput.value.trim();
+        if (!query) return;
+        
+        // Disable input
+        setUIState(false);
+        
+        // Add user message
+        addMessage(query, 'user');
+        
+        // Show loading
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'loading';
+        loadingDiv.id = 'loading-message';
+        loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+        chatMessages.appendChild(loadingDiv);
+        
+        // Scroll to bottom
+        scrollToBottom();
+        
+        // Clear input
+        chatInput.value = '';
+        chatInput.style.height = 'auto';
+        
+        // Send to API
+        fetch('/ai/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                query: query,
+                context: getPageContext()
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Remove loading
+            const loading = document.getElementById('loading-message');
+            if (loading) loading.remove();
+            
+            if (data.success) {
+                addMessage(data.response, 'ai');
+            } else {
+                addMessage('Erro: ' + (data.error || 'Falha na comunicação'), 'ai error');
+            }
+            
+            setUIState(true);
+            scrollToBottom();
+        })
+        .catch(error => {
+            // Remove loading
+            const loading = document.getElementById('loading-message');
+            if (loading) loading.remove();
+            
+            addMessage('Erro de conexão: ' + error.message, 'ai error');
+            setUIState(true);
+            scrollToBottom();
+        });
+    }
+    
+    function addMessage(content, type) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.innerHTML = content.replace(/\n/g, '<br>');
+        messageDiv.appendChild(contentDiv);
+        
+        const timestampDiv = document.createElement('div');
+        timestampDiv.className = 'message-timestamp';
+        timestampDiv.textContent = new Date().toLocaleTimeString();
+        messageDiv.appendChild(timestampDiv);
+        
+        chatMessages.appendChild(messageDiv);
+    }
+    
+    function setUIState(enabled) {
+        chatInput.disabled = !enabled;
+        sendBtn.disabled = !enabled;
+        
+        if (enabled) {
+            sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar';
+        } else {
+            sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+        }
+    }
+    
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    function clearHistory() {
+        fetch('/ai/clear-history', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                chatMessages.innerHTML = `
+                    <div class="text-center text-muted">
+                        <i class="fas fa-comments fa-3x mb-3"></i>
+                        <h5>Histórico limpo com sucesso</h5>
+                        <p>Inicie uma nova conversa com o assistente de IA.</p>
+                    </div>
+                `;
+            } else {
+                alert('Erro ao limpar histórico: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Erro de conexão: ' + error.message);
+        });
+    }
+    
+    function getPageContext() {
+        // Extract context from current page if available
+        const urlPath = window.location.pathname;
+        let context = '';
+        
+        if (urlPath.includes('/pacientes/')) {
+            context = 'Contexto: Página de gerenciamento de pacientes';
+        } else if (urlPath.includes('/receitas/')) {
+            context = 'Contexto: Página de prescrições médicas';
+        } else if (urlPath.includes('/tratamentos/')) {
+            context = 'Contexto: Página de tratamentos odontológicos';
+        }
+        
+        return context;
+    }
+});
+    </script>
+{% endblock extra_js %}

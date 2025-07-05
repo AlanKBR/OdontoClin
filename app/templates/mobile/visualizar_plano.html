@@ -1,176 +1,151 @@
 {% extends "mobile/base.html" %}
-
-{% block title %}Plano #{{ plano.id }} - {{ paciente.nome }}{% endblock %}
-
+{% block title %}
+    Plano #{{ plano.id }} - {{ paciente.nome }}
+{% endblock title %}
 {% block content %}
-<div class="mobile-plan-view-container">
-    <div class="mobile-header">
-        <div class="header-info">
-            <h2>Plano #{{ plano.id }}</h2>
-            <p class="subtitle">{{ paciente.nome }}</p>
-        </div>
-        <a href="{{ url_for('pacientes.listar_planos', paciente_id=paciente.id) }}" class="btn-back">
-            <i class="fas fa-arrow-left"></i>
-            Voltar
-        </a>
-    </div>
-
-    <!-- Plan Summary -->
-    <div class="plan-summary">
-        <div class="summary-header">
-            <div class="plan-status {{ plano.status.lower().replace(' ', '-') }}">
-                {{ plano.status }}
+    <div class="mobile-plan-view-container">
+        <div class="mobile-header">
+            <div class="header-info">
+                <h2>Plano #{{ plano.id }}</h2>
+                <p class="subtitle">{{ paciente.nome }}</p>
             </div>
-            <div class="plan-date">
-                <i class="fas fa-calendar"></i>
-                {{ plano.data_criacao.strftime('%d/%m/%Y') if plano.data_criacao else 'Data não informada' }}
-            </div>
+            <a href="{{ url_for('pacientes.listar_planos', paciente_id=paciente.id) }}"
+               class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+                Voltar
+            </a>
         </div>
-
-        <div class="plan-description">
-            <h3>Descrição</h3>
-            <p>{{ plano.descricao or 'Sem descrição' }}</p>
-        </div>
-
-        {% if plano.observacoes %}
-        <div class="plan-observations">
-            <h3>Observações</h3>
-            <p>{{ plano.observacoes }}</p>
-        </div>
-        {% endif %}
-
-        <div class="plan-budget">
-            <h3>Orçamento Total</h3>
-            <div class="budget-value">R$ {{ "%.2f"|format(plano.orcamento_total) if plano.orcamento_total else '0.00' }}
-            </div>
-        </div>
-
-        {% if dentista %}
-        <div class="plan-dentist">
-            <h3>Dentista Responsável</h3>
-            <p><i class="fas fa-user-md"></i> {{ dentista.nome }}</p>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="quick-actions">
-        <button class="action-btn primary" onclick="showAddProcedureModal()">
-            <i class="fas fa-plus"></i>
-            Adicionar Procedimento
-        </button>
-
-        <button class="action-btn secondary">
-            <i class="fas fa-edit"></i>
-            Editar Plano
-        </button>
-
-        <button class="action-btn danger">
-            <i class="fas fa-trash"></i>
-            Excluir
-        </button>
-    </div>
-
-    <!-- Procedures List -->
-    <div class="procedures-section">
-        <h3>Procedimentos</h3>
-
-        {% if procedimentos %}
-        <div class="procedures-list">
-            {% for procedimento in procedimentos %}
-            <div class="procedure-card">
-                <div class="procedure-header">
-                    <div class="procedure-name">
-                        {{ procedimento.tratamento.nome if procedimento.tratamento else 'Tratamento não especificado' }}
-                    </div>
-                    <div class="procedure-status {{ procedimento.status.lower().replace(' ', '-') }}">
-                        {{ procedimento.status }}
-                    </div>
-                </div>
-
-                <div class="procedure-body">
-                    {% if procedimento.dente %}
-                    <div class="procedure-detail">
-                        <i class="fas fa-tooth"></i>
-                        <span>Dente: {{ procedimento.dente }}</span>
-                    </div>
-                    {% endif %}
-
-                    <div class="procedure-detail">
-                        <i class="fas fa-dollar-sign"></i>
-                        <span>R$ {{ "%.2f"|format(procedimento.valor) if procedimento.valor else '0.00' }}</span>
-                    </div>
-
-                    {% if procedimento.data_realizado %}
-                    <div class="procedure-detail">
-                        <i class="fas fa-calendar-check"></i>
-                        <span>Realizado em: {{ procedimento.data_realizado.strftime('%d/%m/%Y') }}</span>
-                    </div>
-                    {% endif %}
-
-                    {% if procedimento.observacoes %}
-                    <div class="procedure-detail">
-                        <i class="fas fa-sticky-note"></i>
-                        <span>{{ procedimento.observacoes|truncate(100) }}</span>
-                    </div>
-                    {% endif %}
-                </div>
-
-                <div class="procedure-actions">
-                    <button class="action-btn small secondary" title="Editar">
-                        <i class="fas fa-edit"></i>
-                    </button>
-
-                    {% if procedimento.status != 'Concluído' %}
-                    <button class="action-btn small success" title="Marcar como concluído">
-                        <i class="fas fa-check"></i>
-                    </button>
-                    {% endif %}
-
-                    <button class="action-btn small danger" title="Excluir">
-                        <i class="fas fa-trash"></i>
-                    </button>
+        <!-- Plan Summary -->
+        <div class="plan-summary">
+            <div class="summary-header">
+                <div class="plan-status {{ plano.status.lower().replace(' ', '-') }}">{{ plano.status }}</div>
+                <div class="plan-date">
+                    <i class="fas fa-calendar"></i>
+                    {{ plano.data_criacao.strftime("%d/%m/%Y") if plano.data_criacao else 'Data não informada' }}
                 </div>
             </div>
-            {% endfor %}
+            <div class="plan-description">
+                <h3>Descrição</h3>
+                <p>{{ plano.descricao or 'Sem descrição' }}</p>
+            </div>
+            {% if plano.observacoes %}
+                <div class="plan-observations">
+                    <h3>Observações</h3>
+                    <p>{{ plano.observacoes }}</p>
+                </div>
+            {% endif %}
+            <div class="plan-budget">
+                <h3>Orçamento Total</h3>
+                <div class="budget-value">R$ {{ "%.2f"|format(plano.orcamento_total) if plano.orcamento_total else '0.00' }}</div>
+            </div>
+            {% if dentista %}
+                <div class="plan-dentist">
+                    <h3>Dentista Responsável</h3>
+                    <p>
+                        <i class="fas fa-user-md"></i> {{ dentista.nome }}
+                    </p>
+                </div>
+            {% endif %}
         </div>
-        {% else %}
-        <div class="empty-state">
-            <i class="fas fa-procedures"></i>
-            <h3>Nenhum procedimento</h3>
-            <p>Não há procedimentos cadastrados para este plano.</p>
+        <!-- Quick Actions -->
+        <div class="quick-actions">
             <button class="action-btn primary" onclick="showAddProcedureModal()">
                 <i class="fas fa-plus"></i>
-                Adicionar Primeiro Procedimento
+                Adicionar Procedimento
+            </button>
+            <button class="action-btn secondary">
+                <i class="fas fa-edit"></i>
+                Editar Plano
+            </button>
+            <button class="action-btn danger">
+                <i class="fas fa-trash"></i>
+                Excluir
             </button>
         </div>
-        {% endif %}
+        <!-- Procedures List -->
+        <div class="procedures-section">
+            <h3>Procedimentos</h3>
+            {% if procedimentos %}
+                <div class="procedures-list">
+                    {% for procedimento in procedimentos %}
+                        <div class="procedure-card">
+                            <div class="procedure-header">
+                                <div class="procedure-name">
+                                    {{ procedimento.tratamento.nome if procedimento.tratamento else 'Tratamento não especificado' }}
+                                </div>
+                                <div class="procedure-status {{ procedimento.status.lower().replace(' ', '-') }}">{{ procedimento.status }}</div>
+                            </div>
+                            <div class="procedure-body">
+                                {% if procedimento.dente %}
+                                    <div class="procedure-detail">
+                                        <i class="fas fa-tooth"></i>
+                                        <span>Dente: {{ procedimento.dente }}</span>
+                                    </div>
+                                {% endif %}
+                                <div class="procedure-detail">
+                                    <i class="fas fa-dollar-sign"></i>
+                                    <span>R$ {{ "%.2f"|format(procedimento.valor) if procedimento.valor else '0.00' }}</span>
+                                </div>
+                                {% if procedimento.data_realizado %}
+                                    <div class="procedure-detail">
+                                        <i class="fas fa-calendar-check"></i>
+                                        <span>Realizado em: {{ procedimento.data_realizado.strftime("%d/%m/%Y") }}</span>
+                                    </div>
+                                {% endif %}
+                                {% if procedimento.observacoes %}
+                                    <div class="procedure-detail">
+                                        <i class="fas fa-sticky-note"></i>
+                                        <span>{{ procedimento.observacoes|truncate(100) }}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="procedure-actions">
+                                <button class="action-btn small secondary" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                {% if procedimento.status != 'Concluído' %}
+                                    <button class="action-btn small success" title="Marcar como concluído">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                {% endif %}
+                                <button class="action-btn small danger" title="Excluir">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-procedures"></i>
+                    <h3>Nenhum procedimento</h3>
+                    <p>Não há procedimentos cadastrados para este plano.</p>
+                    <button class="action-btn primary" onclick="showAddProcedureModal()">
+                        <i class="fas fa-plus"></i>
+                        Adicionar Primeiro Procedimento
+                    </button>
+                </div>
+            {% endif %}
+        </div>
     </div>
-</div>
-
-<!-- Add Procedure Modal (simplified for mobile) -->
-<div id="addProcedureModal" class="mobile-modal" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Adicionar Procedimento</h3>
-            <button class="modal-close" onclick="hideAddProcedureModal()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-
-        <div class="modal-body">
-            <p>Funcionalidade será implementada em breve...</p>
-        </div>
-
-        <div class="modal-actions">
-            <button class="action-btn secondary" onclick="hideAddProcedureModal()">
-                Cancelar
-            </button>
+    <!-- Add Procedure Modal (simplified for mobile) -->
+    <div id="addProcedureModal" class="mobile-modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Adicionar Procedimento</h3>
+                <button class="modal-close" onclick="hideAddProcedureModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Funcionalidade será implementada em breve...</p>
+            </div>
+            <div class="modal-actions">
+                <button class="action-btn secondary" onclick="hideAddProcedureModal()">Cancelar</button>
+            </div>
         </div>
     </div>
-</div>
-
-<style>
+    <style>
     .mobile-plan-view-container {
         padding: 1rem;
         max-width: 100%;
@@ -549,9 +524,8 @@
             align-items: flex-start;
         }
     }
-</style>
-
-<script>
+    </style>
+    <script>
     function showAddProcedureModal() {
         document.getElementById('addProcedureModal').style.display = 'flex';
     }
@@ -559,5 +533,5 @@
     function hideAddProcedureModal() {
         document.getElementById('addProcedureModal').style.display = 'none';
     }
-</script>
-{% endblock %}
+    </script>
+{% endblock content %}

@@ -1,0 +1,44 @@
+{
+  "ai_enabled": true,
+  "model_name": "pierreguillou/gpt2-small-portuguese",
+  "max_tokens": 512,
+  "temperature": 0.7,
+  "request_timeout": 30,
+  "system_prompt": "Você é um assistente especializado em odontologia. Responda de forma clara, precisa e baseado em evidências científicas.",
+  "providers": {
+    "preferred_order": [
+      "simple",
+      "local",
+      "vllm",
+      "openai"
+    ],
+    "vllm": {
+      "server_url": "http://localhost:8000",
+      "auto_start_server": true,
+      "server_startup_timeout": 120,
+      "gpu_memory_utilization": 0.8,
+      "max_model_len": 4096
+    },
+    "local": {
+      "cache_dir": "./models_cache/",
+      "device": "auto",
+      "gpu_type": "amd",
+      "backend": "cpu_optimized"
+    },
+    "openai": {
+      "api_key": "",
+      "model_name": "gpt-3.5-turbo",
+      "base_url": "https://api.openai.com/v1"
+    }
+  },
+  "ui_settings": {
+    "show_in_sidebar": true,
+    "enable_chat_history": true,
+    "max_history_items": 50
+  },
+  "safety_settings": {
+    "max_query_length": 2000,
+    "enable_content_filter": true,
+    "medical_disclaimer": false
+  }
+}

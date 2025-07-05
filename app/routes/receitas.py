@@ -3,8 +3,9 @@ Módulo com rotas relacionadas a receitas médicas.
 """
 
 from flask import Blueprint, Response, flash, jsonify, redirect, render_template, request, url_for
-from flask_login import current_user, login_required
+from flask_login import current_user
 
+from app.decorators import debug_login_optional
 from app.models.clinica import Clinica  # Added import
 from app.models.paciente import Paciente  # Added import
 from app.models.receita import Medicamento, ModeloReceita
@@ -14,7 +15,7 @@ receitas = Blueprint("receitas", __name__)
 
 
 @receitas.route("/")
-@login_required
+@debug_login_optional
 def index() -> Response:
     """Página principal de receitas."""
     clinica = Clinica.get_instance()
@@ -22,7 +23,7 @@ def index() -> Response:
 
 
 @receitas.route("/nova")
-@login_required
+@debug_login_optional
 def nova_receita() -> Response:
     """Página para criar nova receita."""
     pacientes = Paciente.query.order_by(Paciente.nome).all()
@@ -38,7 +39,7 @@ def nova_receita() -> Response:
 
 
 @receitas.route("/medicamentos")
-@login_required
+@debug_login_optional
 def listar_medicamentos() -> Response:
     """Lista todos os medicamentos cadastrados."""
     medicamentos = Medicamento.query.order_by(Medicamento.principio_ativo).all()
@@ -46,7 +47,7 @@ def listar_medicamentos() -> Response:
 
 
 @receitas.route("/medicamentos/<int:medicamento_id>")
-@login_required
+@debug_login_optional
 def visualizar_medicamento(medicamento_id: int) -> Response:
     """Visualiza detalhes de um medicamento específico."""
     medicamento = Medicamento.query.get_or_404(medicamento_id)
@@ -75,7 +76,7 @@ def visualizar_medicamento(medicamento_id: int) -> Response:
 
 
 @receitas.route("/medicamentos/todos", methods=["GET"])
-@login_required
+@debug_login_optional
 def obter_todos_medicamentos() -> Response:
     """Obtém todos os medicamentos para busca instantânea no frontend."""
     medicamentos = Medicamento.query.order_by(Medicamento.principio_ativo).all()
@@ -108,7 +109,7 @@ def obter_todos_medicamentos() -> Response:
 
 
 @receitas.route("/medicamentos/buscar", methods=["GET"])
-@login_required
+@debug_login_optional
 def buscar_medicamentos() -> Response:
     """Busca medicamentos por qualquer campo relevante da tabela."""
     termo = request.args.get("termo", "")
@@ -158,7 +159,7 @@ def buscar_medicamentos() -> Response:
 
 
 @receitas.route("/modelos")
-@login_required
+@debug_login_optional
 def listar_modelos() -> Response:
     """Lista todos os modelos de receita do usuário atual."""
     try:
@@ -184,7 +185,7 @@ def listar_modelos() -> Response:
 
 
 @receitas.route("/modelos/salvar", methods=["POST"])
-@login_required
+@debug_login_optional
 def salvar_modelo() -> Response:
     """Salva um novo modelo de receita."""
     titulo = request.form.get("titulo")
@@ -218,7 +219,7 @@ def salvar_modelo() -> Response:
 
 
 @receitas.route("/modelos/<int:modelo_id>/visualizar")
-@login_required
+@debug_login_optional
 def visualizar_modelo(modelo_id: int) -> Response:
     """Visualiza um modelo de receita."""
     try:
@@ -259,7 +260,7 @@ def visualizar_modelo(modelo_id: int) -> Response:
 
 
 @receitas.route("/modelos/<int:modelo_id>/excluir", methods=["POST"])
-@login_required
+@debug_login_optional
 def excluir_modelo(modelo_id: int) -> Response:
     """Exclui um modelo de receita."""
     try:
@@ -289,7 +290,7 @@ def excluir_modelo(modelo_id: int) -> Response:
 
 
 @receitas.route("/api/dentistas/<int:dentista_id>/dados-receita")
-@login_required
+@debug_login_optional
 def obter_dados_dentista_receita(dentista_id: int):
     """API para obter dados básicos do dentista para uso em receitas."""
     try:

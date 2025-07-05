@@ -7,15 +7,26 @@ from flask import Flask, render_template
 from markupsafe import Markup
 
 from app.models.user import User
+from app.routes.atestados import atestados_bp  # Adicionando o novo blueprint de atestados
 
 # Import blueprints and models at the top level
 from app.routes.auth import auth
 from app.routes.cro import cro_bp  # Adicionando o novo blueprint de CRO
+from app.routes.documentos import documentos_bp  # Adicionando o novo blueprint de documentos
 from app.routes.main import main
 from app.routes.pacientes import pacientes
 from app.routes.receitas import receitas  # Adicionando o novo blueprint de receitas
 from app.routes.tratamentos import tratamentos
 from app.routes.users import users
+
+# Conditional import for AI Assistant
+try:
+    from app.routes.ai_assistant import ai_assistant_bp
+
+    AI_ASSISTANT_AVAILABLE = True
+except ImportError:
+    AI_ASSISTANT_AVAILABLE = False
+    ai_assistant_bp = None
 
 # Import extensions from the new extensions.py file
 from .extensions import db, login_manager, mobility
@@ -40,13 +51,16 @@ def create_app() -> Flask:
         "USERS_DATABASE_URI", f"sqlite:///{os.path.join(instance_path, 'users.db')}"
     )
     app.config["PACIENTES_DATABASE_URI"] = os.environ.get(
-        "PACIENTES_DATABASE_URI", f"sqlite:///{os.path.join(instance_path, 'pacientes.db')}"
+        "PACIENTES_DATABASE_URI",
+        f"sqlite:///{os.path.join(instance_path, 'pacientes.db')}",
     )
     app.config["TRATAMENTOS_DATABASE_URI"] = os.environ.get(
-        "TRATAMENTOS_DATABASE_URI", f"sqlite:///{os.path.join(instance_path, 'tratamentos.db')}"
+        "TRATAMENTOS_DATABASE_URI",
+        f"sqlite:///{os.path.join(instance_path, 'tratamentos.db')}",
     )
     app.config["RECEITAS_DATABASE_URI"] = os.environ.get(
-        "RECEITAS_DATABASE_URI", f"sqlite:///{os.path.join(instance_path, 'receitas.db')}"
+        "RECEITAS_DATABASE_URI",
+        f"sqlite:///{os.path.join(instance_path, 'receitas.db')}",
     )
 
     # Inicializa extensões
@@ -80,7 +94,7 @@ def create_app() -> Flask:
 
     # Configuração do login
     login_manager.init_app(app)
-    login_manager.login_view = "auth.login"
+    login_manager.login_view = "auth.login"  # type: ignore
     login_manager.login_message = "Por favor, faça login para acessar esta página."
     login_manager.login_message_category = "info"
 
@@ -92,6 +106,16 @@ def create_app() -> Flask:
     app.register_blueprint(users, url_prefix="/users")
     app.register_blueprint(receitas, url_prefix="/receitas")  # Registro do blueprint de receitas
     app.register_blueprint(cro_bp, url_prefix="/cro")  # Registro do blueprint de CRO
+    app.register_blueprint(
+        atestados_bp, url_prefix="/atestados"
+    )  # Registro do blueprint de atestados
+    app.register_blueprint(
+        documentos_bp, url_prefix="/documentos"
+    )  # Registro do blueprint de documentos
+    if AI_ASSISTANT_AVAILABLE and ai_assistant_bp is not None:
+        app.register_blueprint(
+            ai_assistant_bp
+        )  # Registro do blueprint de IA (já tem url_prefix='/ai')
 
     # Custom Jinja filter for date formatting
     def format_date_filter(value: Union[datetime, date], format: str = "%d/%m/%Y") -> str:
@@ -109,7 +133,7 @@ def create_app() -> Flask:
         return {"now": datetime.now(timezone.utc)}
 
     @app.context_processor
-    def inject_csp_nonce() -> dict[str, "callable[[], str]"]:
+    def inject_csp_nonce():
         """
         Provides a Content Security Policy (CSP) nonce for Jinja2 templates.
         """
@@ -125,6 +149,20 @@ def create_app() -> Flask:
 
         return {"is_mobile": getattr(request, "MOBILE", False)}
 
+    @app.context_processor
+    def inject_ai_status() -> dict:
+        """
+        Injects AI availability status into templates.
+        """
+        if AI_ASSISTANT_AVAILABLE:
+            try:
+                from app.services.ai_assistant import ai_assistant
+
+                return {"ai_available": ai_assistant.is_enabled()}
+            except Exception:
+                return {"ai_available": False}
+        return {"ai_available": False}
+
     @login_manager.user_loader
     def load_user(user_id: str) -> Union[User, None]:  # Assuming User model or None
         return User.query.get(int(user_id))
@@ -139,7 +177,9 @@ def create_app() -> Flask:
 
     # Registra função de erro 500
     @app.errorhandler(500)
-    def internal_server_error(e: Exception) -> tuple[str, int]:  # Or specific exception type
+    def internal_server_error(
+        e: Exception,
+    ) -> tuple[str, int]:  # Or specific exception type
         return render_template("500.html"), 500
 
     @app.template_filter("currency")

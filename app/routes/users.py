@@ -1,10 +1,11 @@
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
-from flask_login import current_user, login_required
+from flask_login import current_user
 from flask_wtf import FlaskForm
 from wtforms import HiddenField, PasswordField, SelectField, StringField, SubmitField
 from wtforms.validators import DataRequired, EqualTo, Length, Optional
 
 from app import extensions
+from app.decorators import debug_login_optional
 from app.models.user import User
 
 users = Blueprint("users", __name__)
@@ -71,7 +72,7 @@ def admin_required() -> None:
 
 
 @users.route("/")
-@login_required
+@debug_login_optional
 def listar_usuarios() -> str:
     # Lista todos os usuários
     usuarios = extensions.users_db.query(User).all()
@@ -79,7 +80,7 @@ def listar_usuarios() -> str:
 
 
 @users.route("/novo", methods=["GET", "POST"])
-@login_required
+@debug_login_optional
 def novo_usuario() -> str:
     admin_required()
     form = UserForm()
@@ -129,7 +130,7 @@ def novo_usuario() -> str:
 
 
 @users.route("/editar/<int:id>", methods=["GET", "POST"])
-@login_required
+@debug_login_optional
 def editar_usuario(id: int) -> str:
     admin_required()
     usuario = extensions.users_db.query(User).get(id)
@@ -190,7 +191,7 @@ def editar_usuario(id: int) -> str:
 
 
 @users.route("/excluir/<int:user_id>", methods=["POST"])
-@login_required
+@debug_login_optional
 def delete_user(user_id: int) -> str:
     admin_required()
     user_to_delete = extensions.users_db.query(User).get(user_id)
@@ -209,7 +210,7 @@ def delete_user(user_id: int) -> str:
 
 
 @users.route("/perfil", methods=["GET", "POST"])
-@login_required
+@debug_login_optional
 def meu_perfil() -> str:
     usuario = extensions.users_db.query(User).get(current_user.id)
 

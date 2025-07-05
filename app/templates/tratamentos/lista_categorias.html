@@ -1,10 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Categorias de Tratamentos{% endblock %}
+{% block title %}
+    Categorias de Tratamentos
+{% endblock title %}
 {% block content %}
     <div class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="h3">Categorias de Tratamentos</h2>
-            <a href="{{ url_for('tratamentos.nova_categoria') }}"
+            <a href="{{ url_for("tratamentos.nova_categoria") }}"
                class="btn btn-primary">
                 <i class="bi bi-plus-circle"></i> Nova Categoria
             </a>
@@ -72,7 +74,7 @@
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                                     <form action="{{ url_for('tratamentos.excluir_categoria', categoria_id=categoria.id) }}"
-                                          method="POST">
+                                          method="post">
                                         <button type="submit" class="btn btn-danger" {% if categoria.tratamentos %}disabled{% endif
                                             %}>Excluir</button>
                                     </form>
@@ -85,16 +87,16 @@
                 <div class="col-12">
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle"></i> Nenhuma categoria de tratamento cadastrada.
-                        <a href="{{ url_for('tratamentos.nova_categoria') }}" class="alert-link">Cadastre uma categoria</a>.
+                        <a href="{{ url_for("tratamentos.nova_categoria") }}" class="alert-link">Cadastre uma categoria</a>.
                     </div>
                 </div>
             {% endif %}
         </div>
         <div class="mt-5">
-            <a href="{{ url_for('tratamentos.lista_completa') }}"
+            <a href="{{ url_for("tratamentos.lista_completa") }}"
                class="btn btn-outline-primary">
                 <i class="bi bi-grid"></i> Ver Lista Completa de Tratamentos
             </a>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

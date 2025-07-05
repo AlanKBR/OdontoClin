@@ -1,9 +1,9 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
-from flask_login import login_required
 from flask_wtf import FlaskForm
 from wtforms import BooleanField, FloatField, SelectField, StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional
 
+from app.decorators import debug_login_optional
 from app.extensions import db
 from app.models.tratamento import CategoriaTratamento, Tratamento
 
@@ -33,14 +33,14 @@ class TratamentoForm(CSRFDisabledForm):
 
 
 @tratamentos.route("/")
-@login_required
+@debug_login_optional
 def lista_categorias():
     categorias = CategoriaTratamento.query.all()
     return render_template("tratamentos/lista_categorias.html", categorias=categorias)
 
 
 @tratamentos.route("/categoria/nova", methods=["GET", "POST"])
-@login_required
+@debug_login_optional
 def nova_categoria():
     form = CategoriaForm()
     if form.validate_on_submit():
@@ -59,7 +59,7 @@ def nova_categoria():
 
 
 @tratamentos.route("/categoria/<int:categoria_id>/editar", methods=["GET", "POST"])
-@login_required
+@debug_login_optional
 def editar_categoria(categoria_id):
     categoria = CategoriaTratamento.query.get_or_404(categoria_id)
     form = CategoriaForm()
@@ -81,7 +81,7 @@ def editar_categoria(categoria_id):
 
 
 @tratamentos.route("/categoria/<int:categoria_id>/excluir", methods=["POST"])
-@login_required
+@debug_login_optional
 def excluir_categoria(categoria_id):
     categoria = CategoriaTratamento.query.get_or_404(categoria_id)
 
@@ -97,19 +97,21 @@ def excluir_categoria(categoria_id):
 
 
 @tratamentos.route("/categoria/<int:categoria_id>")
-@login_required
+@debug_login_optional
 def visualizar_categoria(categoria_id):
     categoria = CategoriaTratamento.query.get_or_404(categoria_id)
     tratamentos = (
         Tratamento.query.filter_by(categoria_id=categoria_id).order_by(Tratamento.nome).all()
     )
     return render_template(
-        "tratamentos/visualizar_categoria.html", categoria=categoria, tratamentos=tratamentos
+        "tratamentos/visualizar_categoria.html",
+        categoria=categoria,
+        tratamentos=tratamentos,
     )
 
 
 @tratamentos.route("/tratamento/novo", methods=["GET", "POST"])
-@login_required
+@debug_login_optional
 def novo_tratamento():
     form = TratamentoForm()
 
@@ -143,7 +145,7 @@ def novo_tratamento():
 
 
 @tratamentos.route("/tratamento/<int:tratamento_id>/editar", methods=["GET", "POST"])
-@login_required
+@debug_login_optional
 def editar_tratamento(tratamento_id):
     tratamento = Tratamento.query.get_or_404(tratamento_id)
     form = TratamentoForm()
@@ -180,7 +182,7 @@ def editar_tratamento(tratamento_id):
 
 
 @tratamentos.route("/tratamento/<int:tratamento_id>/excluir", methods=["POST"])
-@login_required
+@debug_login_optional
 def excluir_tratamento(tratamento_id):
     tratamento = Tratamento.query.get_or_404(tratamento_id)
     categoria_id = tratamento.categoria_id
@@ -192,7 +194,7 @@ def excluir_tratamento(tratamento_id):
 
 
 @tratamentos.route("/lista")
-@login_required
+@debug_login_optional
 def lista_completa():
     # Buscar todas as categorias e seus respectivos tratamentos
     categorias = CategoriaTratamento.query.order_by(CategoriaTratamento.nome).all()

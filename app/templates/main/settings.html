@@ -1,273 +1,274 @@
 {% extends 'base.html' %}
-
-{% block title %}Configurações{% endblock %}
-
+{% block title %}
+    Configurações
+{% endblock title %}
 {% block content %}
-<div class="container mt-4">
-    <h2>Configurações</h2>
-    <hr>
-
-    <div class="row">
-        <div class="col-md-3">
-            <div class="list-group">
-                <a href="#clinica" class="list-group-item list-group-item-action active" data-bs-toggle="list">Dados da Clínica</a>
-                <a href="#appearance" class="list-group-item list-group-item-action" data-bs-toggle="list">Aparência</a>
-                <a href="#account" class="list-group-item list-group-item-action" data-bs-toggle="list">Conta</a>
-                <a href="#notifications" class="list-group-item list-group-item-action" data-bs-toggle="list">Notificações</a>
+    <div class="container mt-4">
+        <h2>Configurações</h2>
+        <hr>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="list-group">
+                    <a href="#clinica"
+                       class="list-group-item list-group-item-action active"
+                       data-bs-toggle="list">Dados da Clínica</a>
+                    <a href="#appearance"
+                       class="list-group-item list-group-item-action"
+                       data-bs-toggle="list">Aparência</a>
+                    <a href="#account"
+                       class="list-group-item list-group-item-action"
+                       data-bs-toggle="list">Conta</a>
+                    <a href="#notifications"
+                       class="list-group-item list-group-item-action"
+                       data-bs-toggle="list">Notificações</a>
+                </div>
             </div>
-        </div>
-
-        <div class="col-md-9">
-            <div class="tab-content">
-                <!-- Nova aba: Dados da Clínica -->
-                <div class="tab-pane fade show active" id="clinica">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4><i class="bi bi-building"></i> Informações da Clínica</h4>
-                        </div>
-                        <div class="card-body">
-                            <form method="POST">
-                                {{ form.hidden_tag() }}
-                                
-                                <div class="row mb-3">
-                                    <div class="col-md-8">
-                                        <label for="nome" class="form-label">Nome da Clínica *</label>
-                                        {{ form.nome(class="form-control", id="nome", placeholder="Nome da sua clínica") }}
-                                        {% if form.nome.errors %}
-                                            <div class="text-danger">
-                                                {% for error in form.nome.errors %}<small>{{ error }}</small>{% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label for="cro_clinica" class="form-label">CRO da Clínica</label>
-                                        {{ form.cro_clinica(class="form-control", id="cro_clinica", placeholder="Ex: CRO-SP-123456") }}
-                                        {% if form.cro_clinica.errors %}
-                                            <div class="text-danger">
-                                                {% for error in form.cro_clinica.errors %}<small>{{ error }}</small>{% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-
-                                <div class="row mb-3">
-                                    <div class="col-md-12">
-                                        <label for="endereco" class="form-label">Endereço</label>
-                                        {{ form.endereco(class="form-control", id="endereco", rows="2", placeholder="Endereço completo da clínica") }}
-                                        {% if form.endereco.errors %}
-                                            <div class="text-danger">
-                                                {% for error in form.endereco.errors %}<small>{{ error }}</small>{% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <label for="telefone" class="form-label">Telefone</label>
-                                        {{ form.telefone(class="form-control", id="telefone", placeholder="(11) 0000-0000") }}
-                                        {% if form.telefone.errors %}
-                                            <div class="text-danger">
-                                                {% for error in form.telefone.errors %}<small>{{ error }}</small>{% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="celular" class="form-label">Celular/WhatsApp</label>
-                                        {{ form.celular(class="form-control", id="celular", placeholder="(11) 90000-0000") }}
-                                        {% if form.celular.errors %}
-                                            <div class="text-danger">
-                                                {% for error in form.celular.errors %}<small>{{ error }}</small>{% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <label for="email" class="form-label">E-mail</label>
-                                        {{ form.email(class="form-control", id="email", placeholder="contato@clinica.com.br") }}
-                                        {% if form.email.errors %}
-                                            <div class="text-danger">
-                                                {% for error in form.email.errors %}<small>{{ error }}</small>{% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="site" class="form-label">Site</label>
-                                        {{ form.site(class="form-control", id="site", placeholder="www.clinica.com.br") }}
-                                        {% if form.site.errors %}
-                                            <div class="text-danger">
-                                                {% for error in form.site.errors %}<small>{{ error }}</small>{% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-
-                                <div class="row mb-3">
-                                    <div class="col-md-4">
-                                        <label for="cep" class="form-label">CEP</label>
-                                        {{ form.cep(class="form-control", id="cep", placeholder="00000-000") }}
-                                        {% if form.cep.errors %}
-                                            <div class="text-danger">
-                                                {% for error in form.cep.errors %}<small>{{ error }}</small>{% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="cidade" class="form-label">Cidade</label>
-                                        {{ form.cidade(class="form-control", id="cidade", placeholder="São Paulo") }}
-                                        {% if form.cidade.errors %}
-                                            <div class="text-danger">
-                                                {% for error in form.cidade.errors %}<small>{{ error }}</small>{% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="col-md-2">
-                                        <label for="estado" class="form-label">Estado</label>
-                                        {{ form.estado(class="form-control", id="estado", placeholder="SP") }}
-                                        {% if form.estado.errors %}
-                                            <div class="text-danger">
-                                                {% for error in form.estado.errors %}<small>{{ error }}</small>{% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <label for="cnpj" class="form-label">CNPJ</label>
-                                        {{ form.cnpj(class="form-control", id="cnpj", placeholder="00.000.000/0000-00") }}
-                                        {% if form.cnpj.errors %}
-                                            <div class="text-danger">
-                                                {% for error in form.cnpj.errors %}<small>{{ error }}</small>{% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-
-                                <hr>
-                                
-                                <!-- Upload de Logo -->
-                                <div class="mb-4">
-                                    <h5><i class="bi bi-image"></i> Logo da Clínica</h5>
-                                    
-                                    <!-- Prévia do logo atual se existir -->
+            <div class="col-md-9">
+                <div class="tab-content">
+                    <!-- Nova aba: Dados da Clínica -->
+                    <div class="tab-pane fade show active" id="clinica">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4>
+                                    <i class="bi bi-building"></i> Informações da Clínica
+                                </h4>
+                            </div>
+                            <div class="card-body">
+                                <form method="post">
+                                    {{ form.hidden_tag() }}
                                     <div class="row mb-3">
-                                        <div class="col-12">
-                                            <label class="form-label">Logo Atual:</label>
-                                            <div class="border rounded p-3 bg-light text-center" style="min-height: 120px; display: flex; align-items: center; justify-content: center;">
-                                                <img src="{{ url_for('main.uploaded_logo', filename='clinic_logo.png') }}" 
-                                                     alt="Logo da Clínica" 
-                                                     class="img-fluid" 
-                                                     style="max-height: 100px; max-width: 300px;"
-                                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                                                <div style="display: none; color: #6c757d;">
-                                                    <i class="bi bi-image" style="font-size: 2rem;"></i>
-                                                    <p class="mb-0 mt-2">Nenhum logo definido</p>
+                                        <div class="col-md-8">
+                                            <label for="nome" class="form-label">Nome da Clínica *</label>
+                                            {{ form.nome(class="form-control", id="nome", placeholder="Nome da sua clínica") }}
+                                            {% if form.nome.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.nome.errors %}<small>{{ error }}</small>{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="cro_clinica" class="form-label">CRO da Clínica</label>
+                                            {{ form.cro_clinica(class="form-control", id="cro_clinica", placeholder="Ex: CRO-SP-123456") }}
+                                            {% if form.cro_clinica.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.cro_clinica.errors %}<small>{{ error }}</small>{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-12">
+                                            <label for="endereco" class="form-label">Endereço</label>
+                                            {{ form.endereco(class="form-control", id="endereco", rows="2", placeholder="Endereço completo da clínica") }}
+                                            {% if form.endereco.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.endereco.errors %}<small>{{ error }}</small>{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="telefone" class="form-label">Telefone</label>
+                                            {{ form.telefone(class="form-control", id="telefone", placeholder="(11) 0000-0000") }}
+                                            {% if form.telefone.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.telefone.errors %}<small>{{ error }}</small>{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="celular" class="form-label">Celular/WhatsApp</label>
+                                            {{ form.celular(class="form-control", id="celular", placeholder="(11) 90000-0000") }}
+                                            {% if form.celular.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.celular.errors %}<small>{{ error }}</small>{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="email" class="form-label">E-mail</label>
+                                            {{ form.email(class="form-control", id="email", placeholder="contato@clinica.com.br") }}
+                                            {% if form.email.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.email.errors %}<small>{{ error }}</small>{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="site" class="form-label">Site</label>
+                                            {{ form.site(class="form-control", id="site", placeholder="www.clinica.com.br") }}
+                                            {% if form.site.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.site.errors %}<small>{{ error }}</small>{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-4">
+                                            <label for="cep" class="form-label">CEP</label>
+                                            {{ form.cep(class="form-control", id="cep", placeholder="00000-000") }}
+                                            {% if form.cep.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.cep.errors %}<small>{{ error }}</small>{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="cidade" class="form-label">Cidade</label>
+                                            {{ form.cidade(class="form-control", id="cidade", placeholder="São Paulo") }}
+                                            {% if form.cidade.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.cidade.errors %}<small>{{ error }}</small>{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label for="estado" class="form-label">Estado</label>
+                                            {{ form.estado(class="form-control", id="estado", placeholder="SP") }}
+                                            {% if form.estado.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.estado.errors %}<small>{{ error }}</small>{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <label for="cnpj" class="form-label">CNPJ</label>
+                                            {{ form.cnpj(class="form-control", id="cnpj", placeholder="00.000.000/0000-00") }}
+                                            {% if form.cnpj.errors %}
+                                                <div class="text-danger">
+                                                    {% for error in form.cnpj.errors %}<small>{{ error }}</small>{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    <!-- Upload de Logo -->
+                                    <div class="mb-4">
+                                        <h5>
+                                            <i class="bi bi-image"></i> Logo da Clínica
+                                        </h5>
+                                        <!-- Prévia do logo atual se existir -->
+                                        <div class="row mb-3">
+                                            <div class="col-12">
+                                                <label class="form-label">Logo Atual:</label>
+                                                <div class="border rounded p-3 bg-light text-center"
+                                                     style="min-height: 120px;
+                                                            display: flex;
+                                                            align-items: center;
+                                                            justify-content: center">
+                                                    <img src="{{ url_for('main.uploaded_logo', filename='clinic_logo.png') }}"
+                                                         alt="Logo da Clínica"
+                                                         class="img-fluid"
+                                                         style="max-height: 100px;
+                                                                max-width: 300px"
+                                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                                    <div style="display: none; color: #6c757d;">
+                                                        <i class="bi bi-image" style="font-size: 2rem;"></i>
+                                                        <p class="mb-0 mt-2">Nenhum logo definido</p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
+                                        <form action="{{ url_for("main.upload_logo") }}"
+                                              method="post"
+                                              enctype="multipart/form-data">
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <label for="logoUpload" class="form-label">Alterar logo da clínica (formato PNG)</label>
+                                                    <input class="form-control"
+                                                           type="file"
+                                                           id="logoUpload"
+                                                           name="logo"
+                                                           accept="image/png">
+                                                    <div class="form-text">Recomendado: 300x100 pixels, formato PNG com fundo transparente</div>
+                                                </div>
+                                                <div class="col-md-4 d-flex align-items-end">
+                                                    <button type="submit" class="btn btn-outline-primary">
+                                                        <i class="bi bi-upload"></i> Enviar Logo
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
                                     </div>
-                                    
-                                    <form action="{{ url_for('main.upload_logo') }}" method="post" enctype="multipart/form-data">
-                                        <div class="row">
-                                            <div class="col-md-8">
-                                                <label for="logoUpload" class="form-label">Alterar logo da clínica (formato PNG)</label>
-                                                <input class="form-control" type="file" id="logoUpload" name="logo" accept="image/png">
-                                                <div class="form-text">Recomendado: 300x100 pixels, formato PNG com fundo transparente</div>
-                                            </div>
-                                            <div class="col-md-4 d-flex align-items-end">
-                                                <button type="submit" class="btn btn-outline-primary">
-                                                    <i class="bi bi-upload"></i> Enviar Logo
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                                
-                                <hr>
-                                
-                                <div class="d-flex justify-content-end">
-                                    {{ form.submit(class="btn btn-primary") }}
-                                </div>
-                            </form>
+                                    <hr>
+                                    <div class="d-flex justify-content-end">{{ form.submit(class="btn btn-primary") }}</div>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="tab-pane fade" id="appearance">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4>Aparência</h4>
-                        </div>
-                        <div class="card-body">
-                            <h5>Tema</h5>
-                            <div class="form-check form-switch mb-3">
-                                <input class="form-check-input" type="checkbox" id="darkModeToggle">
-                                <label class="form-check-label" for="darkModeToggle">
-                                    Modo Escuro
-                                </label>
+                    <div class="tab-pane fade" id="appearance">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4>Aparência</h4>
                             </div>
-                            <div class="d-flex mt-4">
-                                <div class="theme-preview light-theme me-4">
-                                    <div class="card theme-card" onclick="setLightTheme()">
-                                        <div class="card-body text-center">
-                                            <div class="theme-sample">
-                                                <div class="theme-header"></div>
-                                                <div class="theme-content"></div>
+                            <div class="card-body">
+                                <h5>Tema</h5>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="darkModeToggle">
+                                    <label class="form-check-label" for="darkModeToggle">Modo Escuro</label>
+                                </div>
+                                <div class="d-flex mt-4">
+                                    <div class="theme-preview light-theme me-4">
+                                        <div class="card theme-card" onclick="setLightTheme()">
+                                            <div class="card-body text-center">
+                                                <div class="theme-sample">
+                                                    <div class="theme-header"></div>
+                                                    <div class="theme-content"></div>
+                                                </div>
+                                                <p class="mt-2 mb-0">Tema Claro</p>
                                             </div>
-                                            <p class="mt-2 mb-0">Tema Claro</p>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="theme-preview dark-theme">
-                                    <div class="card theme-card" onclick="setDarkTheme()">
-                                        <div class="card-body text-center">
-                                            <div class="theme-sample dark">
-                                                <div class="theme-header"></div>
-                                                <div class="theme-content"></div>
+                                    <div class="theme-preview dark-theme">
+                                        <div class="card theme-card" onclick="setDarkTheme()">
+                                            <div class="card-body text-center">
+                                                <div class="theme-sample dark">
+                                                    <div class="theme-header"></div>
+                                                    <div class="theme-content"></div>
+                                                </div>
+                                                <p class="mt-2 mb-0">Tema Escuro</p>
                                             </div>
-                                            <p class="mt-2 mb-0">Tema Escuro</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="tab-pane fade" id="account">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4>Configurações da Conta</h4>
-                        </div>
-                        <div class="card-body">
-                            <p>Opções de configuração da conta serão adicionadas aqui.</p>
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle"></i>
-                                As configurações de logo da clínica foram movidas para a aba "Dados da Clínica".
+                    <div class="tab-pane fade" id="account">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4>Configurações da Conta</h4>
+                            </div>
+                            <div class="card-body">
+                                <p>Opções de configuração da conta serão adicionadas aqui.</p>
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i>
+                                    As configurações de logo da clínica foram movidas para a aba "Dados da Clínica".
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="tab-pane fade" id="notifications">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4>Configurações de Notificações</h4>
-                        </div>
-                        <div class="card-body">
-                            <p>Opções de configuração de notificações serão adicionadas aqui.</p>
+                    <div class="tab-pane fade" id="notifications">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4>Configurações de Notificações</h4>
+                            </div>
+                            <div class="card-body">
+                                <p>Opções de configuração de notificações serão adicionadas aqui.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-
-<style>
+    <style>
     .theme-preview .theme-card {
         cursor: pointer;
         transition: transform 0.2s;
@@ -306,13 +307,11 @@
     .theme-sample.dark .theme-content {
         background-color: #121212;
     }
-</style>
-
-<!-- Não precisa do script aqui, pois estamos usando o script global theme-toggle.js -->
-{% endblock %}
-
+    </style>
+    <!-- Não precisa do script aqui, pois estamos usando o script global theme-toggle.js -->
+{% endblock content %}
 {% block extra_js %}
-<script nonce="{{ csp_nonce() }}">
+    <script nonce="{{ csp_nonce() }}">
 document.addEventListener('DOMContentLoaded', function() {
     // Máscara para telefone
     const telefoneInput = document.getElementById('telefone');
@@ -378,5 +377,5 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-</script>
-{% endblock %}
+    </script>
+{% endblock extra_js %}

@@ -1,5 +1,7 @@
 {% extends "base.html" %}
-{% block title %}{{ paciente.nome }} | OdontoClinic{% endblock %}
+{% block title %}
+    {{ paciente.nome }} | OdontoClinic
+{% endblock title %}
 {% block extra_css %}
     <style nonce="{{ csp_nonce() }}">
     .nav-tabs .nav-link {
@@ -30,16 +32,16 @@
         margin-bottom: 20px;
     }
     </style>
-{% endblock %}
+{% endblock extra_css %}
 {% block content %}
     <div class="container-fluid py-4">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">
-                    <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+                    <a href="{{ url_for("main.dashboard") }}">Dashboard</a>
                 </li>
                 <li class="breadcrumb-item">
-                    <a href="{{ url_for('pacientes.listar_pacientes') }}">Pacientes</a>
+                    <a href="{{ url_for("pacientes.listar_pacientes") }}">Pacientes</a>
                 </li>
                 <li class="breadcrumb-item active" aria-current="page">{{ paciente.nome }}</li>
             </ol>
@@ -127,9 +129,7 @@
                                     </div>
                                     <div class="row mb-2">
                                         <div class="col-md-4 fw-bold">Data de Nascimento:</div>
-                                        <div class="col-md-8">
-                                            {{ paciente.data_nascimento|date if paciente.data_nascimento else '-' }}
-                                        </div>
+                                        <div class="col-md-8">{{ paciente.data_nascimento|date if paciente.data_nascimento else '-' }}</div>
                                     </div>
                                     <div class="row mb-2">
                                         <div class="col-md-4 fw-bold">Sexo:</div>
@@ -199,7 +199,7 @@
                         </div>
                     </div>
                 </div>
-            {% endblock %}
+            {% endblock content %}
         </div>
     </div>
     <!-- Modal de confirmação de exclusão -->
@@ -224,7 +224,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <form id="form-excluir-paciente"
-                          method="POST"
+                          method="post"
                           action="{{ url_for('pacientes.excluir_paciente', paciente_id=paciente.id) }}">
                         <button type="submit" id="btn-excluir-paciente" class="btn btn-danger">Excluir</button>
                     </form>
@@ -247,5 +247,5 @@
         }
     });
         </script>
-    {% endblock %}
-{% endblock %}
+    {% endblock extra_js %}
+{% endblock content %}

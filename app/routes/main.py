@@ -11,12 +11,12 @@ from flask import (
     url_for,
 )
 from flask.typing import ResponseReturnValue
-from flask_login import current_user, login_required
+from flask_login import current_user
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, TextAreaField
 from wtforms.validators import Email, Length, Optional
 
-from app.decorators import admin_required
+from app.decorators import debug_admin_optional, debug_login_optional
 from app.extensions import db
 from app.models.clinica import Clinica
 
@@ -42,11 +42,16 @@ class ClinicaForm(FlaskForm):
 def index() -> ResponseReturnValue:
     if current_user.is_authenticated:
         return redirect(url_for("main.dashboard"))
+    # Em modo debug, redireciona direto para dashboard (login automático acontecerá lá)
+    from flask import current_app
+
+    if current_app.debug:
+        return redirect(url_for("main.dashboard"))
     return redirect(url_for("auth.login"))
 
 
 @main.route("/dashboard")
-@login_required
+@debug_login_optional
 def dashboard() -> ResponseReturnValue:
     # Detecta se é um dispositivo móvel
     is_mobile = getattr(request, "MOBILE", False)
@@ -67,8 +72,7 @@ def dashboard() -> ResponseReturnValue:
 
 
 @main.route("/settings", methods=["GET", "POST"])
-@login_required
-@admin_required
+@debug_admin_optional
 def settings() -> ResponseReturnValue:
     # Obter a instância da clínica
     clinica = Clinica.get_instance()
@@ -87,20 +91,20 @@ def settings() -> ResponseReturnValue:
 
 
 @main.route("/calculadora-anestesico")
-@login_required
+@debug_login_optional
 def calculadora_anestesico():
     return render_template("main/calculadora_anestesico.html")
 
 
 @main.route("/sidebar-demo")
-@login_required
+@debug_login_optional
 def sidebar_demo():
     """Demonstração das funcionalidades da nova sidebar moderna"""
     return render_template("sidebar_demo.html")
 
 
 @main.route("/upload_logo", methods=["POST"])
-@login_required
+@debug_login_optional
 def upload_logo() -> ResponseReturnValue:
     if "logo" not in request.files:
         flash("Nenhum arquivo enviado.", "warning")

@@ -1,104 +1,93 @@
 {% extends "mobile/base.html" %}
-
-{% block title %}Planos de Tratamento - {{ paciente.nome }}{% endblock %}
-
+{% block title %}
+    Planos de Tratamento - {{ paciente.nome }}
+{% endblock title %}
 {% block content %}
-<div class="mobile-plans-container">
-    <div class="mobile-header">
-        <div class="header-info">
-            <h2>{{ paciente.nome }}</h2>
-            <p class="subtitle">Planos de Tratamento</p>
-        </div>
-        <a href="{{ url_for('pacientes.visualizar_paciente', paciente_id=paciente.id) }}" class="btn-back">
-            <i class="fas fa-arrow-left"></i>
-            Voltar
-        </a>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="quick-actions">
-        <a href="{{ url_for('pacientes.novo_plano', paciente_id=paciente.id) }}" class="action-btn primary">
-            <i class="fas fa-plus"></i>
-            Novo Plano
-        </a>
-    </div>
-
-    <!-- Plans List -->
-    <div class="plans-section">
-        {% if planos %}
-        <div class="plans-list">
-            {% for plano in planos %}
-            <div class="plan-card">
-                <div class="plan-header">
-                    <div class="plan-id">
-                        <i class="fas fa-clipboard-list"></i>
-                        Plano #{{ plano.id }}
-                    </div>
-                    <div class="plan-status {{ plano.status.lower().replace(' ', '-') }}">
-                        {{ plano.status }}
-                    </div>
-                </div>
-
-                <div class="plan-body">
-                    <div class="plan-description">
-                        {{ plano.descricao }}
-                    </div>
-
-                    <div class="plan-details">
-                        <div class="detail-item">
-                            <i class="fas fa-calendar"></i>
-                            <span>{{ plano.data_criacao.strftime('%d/%m/%Y') if plano.data_criacao else 'Data não
-                                informada' }}</span>
-                        </div>
-
-                        <div class="detail-item">
-                            <i class="fas fa-dollar-sign"></i>
-                            <span>R$ {{ "%.2f"|format(plano.orcamento_total) if plano.orcamento_total else '0.00'
-                                }}</span>
-                        </div>
-
-                        {% if plano.observacoes %}
-                        <div class="detail-item">
-                            <i class="fas fa-sticky-note"></i>
-                            <span>{{ plano.observacoes|truncate(100) }}</span>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div class="plan-actions">
-                    <a href="{{ url_for('pacientes.visualizar_plano', paciente_id=paciente.id, plano_id=plano.id) }}"
-                        class="action-btn primary">
-                        <i class="fas fa-eye"></i>
-                        Ver Detalhes
-                    </a>
-
-                    <button class="action-btn secondary" title="Editar">
-                        <i class="fas fa-edit"></i>
-                    </button>
-
-                    <button class="action-btn danger" title="Excluir">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
+    <div class="mobile-plans-container">
+        <div class="mobile-header">
+            <div class="header-info">
+                <h2>{{ paciente.nome }}</h2>
+                <p class="subtitle">Planos de Tratamento</p>
             </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="empty-state">
-            <i class="fas fa-clipboard-list"></i>
-            <h3>Nenhum plano de tratamento</h3>
-            <p>Não há planos de tratamento registrados para este paciente.</p>
-            <a href="{{ url_for('pacientes.novo_plano', paciente_id=paciente.id) }}" class="action-btn primary">
-                <i class="fas fa-plus"></i>
-                Criar Primeiro Plano
+            <a href="{{ url_for('pacientes.visualizar_paciente', paciente_id=paciente.id) }}"
+               class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+                Voltar
             </a>
         </div>
-        {% endif %}
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <a href="{{ url_for('pacientes.novo_plano', paciente_id=paciente.id) }}"
+               class="action-btn primary">
+                <i class="fas fa-plus"></i>
+                Novo Plano
+            </a>
+        </div>
+        <!-- Plans List -->
+        <div class="plans-section">
+            {% if planos %}
+                <div class="plans-list">
+                    {% for plano in planos %}
+                        <div class="plan-card">
+                            <div class="plan-header">
+                                <div class="plan-id">
+                                    <i class="fas fa-clipboard-list"></i>
+                                    Plano #{{ plano.id }}
+                                </div>
+                                <div class="plan-status {{ plano.status.lower().replace(' ', '-') }}">{{ plano.status }}</div>
+                            </div>
+                            <div class="plan-body">
+                                <div class="plan-description">{{ plano.descricao }}</div>
+                                <div class="plan-details">
+                                    <div class="detail-item">
+                                        <i class="fas fa-calendar"></i>
+                                        <span>{{ plano.data_criacao.strftime("%d/%m/%Y") if plano.data_criacao else 'Data não
+                                        informada' }}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <i class="fas fa-dollar-sign"></i>
+                                        <span>R$ {{ "%.2f"|format(plano.orcamento_total) if plano.orcamento_total else '0.00'
+                                        }}</span>
+                                    </div>
+                                    {% if plano.observacoes %}
+                                        <div class="detail-item">
+                                            <i class="fas fa-sticky-note"></i>
+                                            <span>{{ plano.observacoes|truncate(100) }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="plan-actions">
+                                <a href="{{ url_for('pacientes.visualizar_plano', paciente_id=paciente.id, plano_id=plano.id) }}"
+                                   class="action-btn primary">
+                                    <i class="fas fa-eye"></i>
+                                    Ver Detalhes
+                                </a>
+                                <button class="action-btn secondary" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="action-btn danger" title="Excluir">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-clipboard-list"></i>
+                    <h3>Nenhum plano de tratamento</h3>
+                    <p>Não há planos de tratamento registrados para este paciente.</p>
+                    <a href="{{ url_for('pacientes.novo_plano', paciente_id=paciente.id) }}"
+                       class="action-btn primary">
+                        <i class="fas fa-plus"></i>
+                        Criar Primeiro Plano
+                    </a>
+                </div>
+            {% endif %}
+        </div>
     </div>
-</div>
-
-<style>
+    <style>
     .mobile-plans-container {
         padding: 1rem;
         max-width: 100%;
@@ -328,5 +317,5 @@
             flex: none;
         }
     }
-</style>
-{% endblock %}
+    </style>
+{% endblock content %}

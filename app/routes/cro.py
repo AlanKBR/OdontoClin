@@ -18,7 +18,7 @@ API_KEY = None
 
 @cro_bp.route("/", methods=["GET", "POST"])
 @login_required
-def index() -> str:
+def index():
     global API_KEY
     results = None
     api_limite = None
@@ -145,9 +145,7 @@ def index() -> str:
             except requests.exceptions.HTTPError as errh:
                 status_code = errh.response.status_code
                 reason = errh.response.reason
-                error_details = (
-                    f" (API: {api_type.upper()}, UF: {uf.upper() if uf != 'todos' else 'Todos'})"
-                )
+                error_details = f" (API: {api_type.upper()}, UF: {uf.upper() if uf and uf != 'todos' else 'Todos'})"
                 try:
                     error_body = errh.response.json()
                     if isinstance(error_body, dict) and "erro" in error_body:
@@ -163,17 +161,17 @@ def index() -> str:
                 )  # Use dynamic_api_url
             except requests.exceptions.Timeout:
                 flash(
-                    f"Timeout ao consultar API ({api_type.upper()}, UF: {uf.upper() if uf != 'todos' else 'Todos'}) em {dynamic_api_url}.",
+                    f"Timeout ao consultar API ({api_type.upper()}, UF: {uf.upper() if uf and uf != 'todos' else 'Todos'}) em {dynamic_api_url}.",
                     "danger",
                 )  # Use dynamic_api_url
             except requests.exceptions.RequestException as err:
                 flash(
-                    f"Erro na requisição ({api_type.upper()}, UF: {uf.upper() if uf != 'todos' else 'Todos'}) API: {err}",
+                    f"Erro na requisição ({api_type.upper()}, UF: {uf.upper() if uf and uf != 'todos' else 'Todos'}) API: {err}",
                     "danger",
                 )
             except ValueError:
                 flash(
-                    f"Erro ao processar JSON da API ({api_type.upper()}, UF: {uf.upper() if uf != 'todos' else 'Todos'}).",
+                    f"Erro ao processar JSON da API ({api_type.upper()}, UF: {uf.upper() if uf and uf != 'todos' else 'Todos'}).",
                     "danger",
                 )
 

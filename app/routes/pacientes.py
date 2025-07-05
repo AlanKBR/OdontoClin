@@ -13,7 +13,7 @@ from flask import (  # current_app,  # Unused import; session,  # Unused import
     request,
     url_for,
 )
-from flask_login import current_user, login_required
+from flask_login import current_user
 from flask_wtf import FlaskForm
 from sqlalchemy import or_  # Add this import
 from sqlalchemy.exc import SQLAlchemyError  # Added import
@@ -30,6 +30,7 @@ from wtforms import (
 )
 from wtforms.validators import DataRequired, Email, Length, Optional
 
+from app.decorators import debug_login_optional
 from app.extensions import db  # Changed from \\\'from app import db\\\'
 from app.models.paciente import Paciente  # Ensure Paciente is imported
 from app.models.paciente import (
@@ -248,7 +249,7 @@ class ExcluirPacienteForm(CSRFDisabledForm):
 
 
 @pacientes.route("/pacientes/<int:paciente_id>/financeiro/novo", methods=["GET", "POST"])
-@login_required
+@debug_login_optional
 def novo_financeiro(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
     form = FinanceiroForm()
@@ -288,7 +289,7 @@ def novo_financeiro(paciente_id: int):  # Add type hint
 
 
 @pacientes.route("/pacientes")
-@login_required
+@debug_login_optional
 def listar_pacientes() -> str:  # Add return type annotation
     page = request.args.get("page", 1, type=int)
     query = Paciente.query.order_by(Paciente.nome)  # Filtro de busca
@@ -331,7 +332,7 @@ def listar_pacientes() -> str:  # Add return type annotation
 
 
 @pacientes.route("/pacientes/novo", methods=["GET", "POST"])
-@login_required
+@debug_login_optional
 def novo_paciente() -> str:  # Add return type annotation
     form = PacienteForm()
     if form.validate_on_submit():
@@ -387,7 +388,7 @@ def novo_paciente() -> str:  # Add return type annotation
 
 
 @pacientes.route("/pacientes/<int:paciente_id>")
-@login_required
+@debug_login_optional
 def visualizar_paciente(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
 
@@ -405,7 +406,7 @@ def visualizar_paciente(paciente_id: int):  # Add type hint
 
 
 @pacientes.route("/pacientes/<int:paciente_id>/editar", methods=["GET", "POST"])
-@login_required
+@debug_login_optional
 def editar_paciente(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
     form = PacienteForm(obj=paciente)
@@ -446,7 +447,7 @@ def editar_paciente(paciente_id: int):  # Add type hint
 
 
 @pacientes.route("/pacientes/<int:paciente_id>/financeiro")
-@login_required
+@debug_login_optional
 def listar_financeiro(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
     lancamentos = (
@@ -497,7 +498,7 @@ def listar_financeiro(paciente_id: int):  # Add type hint
 
 
 @pacientes.route("/pacientes/<int:paciente_id>/excluir", methods=["POST"])
-@login_required
+@debug_login_optional
 def excluir_paciente(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
     try:
@@ -512,7 +513,7 @@ def excluir_paciente(paciente_id: int):  # Add type hint
 
 
 @pacientes.route("/pacientes/<int:paciente_id>/ficha", methods=["GET", "POST"])
-@login_required
+@debug_login_optional
 def editar_ficha(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
 
@@ -535,7 +536,7 @@ def editar_ficha(paciente_id: int):  # Add type hint
 
 
 @pacientes.route("/pacientes/<int:paciente_id>/anamnese", methods=["GET", "POST"])
-@login_required
+@debug_login_optional
 def editar_anamnese(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
 
@@ -561,7 +562,7 @@ def editar_anamnese(paciente_id: int):  # Add type hint
 
 
 @pacientes.route("/pacientes/<int:paciente_id>/planos")
-@login_required
+@debug_login_optional
 def listar_planos(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
     planos = (
@@ -584,7 +585,7 @@ def listar_planos(paciente_id: int):  # Add type hint
 
 
 @pacientes.route("/pacientes/<int:paciente_id>/planos/novo", methods=["GET", "POST"])
-@login_required
+@debug_login_optional
 def novo_plano(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
     form = PlanoTratamentoForm()
@@ -616,7 +617,7 @@ def novo_plano(paciente_id: int):  # Add type hint
 
 
 @pacientes.route("/pacientes/<int:paciente_id>/planos/<int:plano_id>")
-@login_required
+@debug_login_optional
 def visualizar_plano(paciente_id: int, plano_id: int):  # Add type hints
     paciente = Paciente.query.get_or_404(paciente_id)
     plano = PlanoTratamento.query.get_or_404(plano_id)
@@ -668,7 +669,7 @@ def visualizar_plano(paciente_id: int, plano_id: int):  # Add type hints
 @pacientes.route(
     "/pacientes/<int:paciente_id>/planos/<int:plano_id>/editar", methods=["GET", "POST"]
 )
-@login_required
+@debug_login_optional
 def editar_plano(paciente_id: int, plano_id: int):  # Add type hints
     paciente = Paciente.query.get_or_404(paciente_id)
     plano = PlanoTratamento.query.get_or_404(plano_id)
@@ -701,7 +702,7 @@ def editar_plano(paciente_id: int, plano_id: int):  # Add type hints
     "/pacientes/<int:paciente_id>/planos/<int:plano_id>/procedimentos/novo",
     methods=["GET", "POST"],
 )
-@login_required
+@debug_login_optional
 def novo_procedimento(paciente_id: int, plano_id: int):  # Add type hints
     paciente = Paciente.query.get_or_404(paciente_id)
     plano = PlanoTratamento.query.get_or_404(plano_id)
@@ -795,7 +796,7 @@ def novo_procedimento(paciente_id: int, plano_id: int):  # Add type hints
     "/pacientes/<int:paciente_id>/planos/<int:plano_id>/procedimentos/<int:proc_id>/editar",
     methods=["GET", "POST"],
 )
-@login_required
+@debug_login_optional
 def editar_procedimento(paciente_id: int, plano_id: int, proc_id: int):  # Add type hints
     paciente = Paciente.query.get_or_404(paciente_id)
     plano = PlanoTratamento.query.get_or_404(plano_id)
@@ -916,7 +917,7 @@ def editar_procedimento(paciente_id: int, plano_id: int, proc_id: int):  # Add t
     "/pacientes/<int:paciente_id>/planos/<int:plano_id>/procedimentos/<int:proc_id>/excluir",
     methods=["POST"],
 )
-@login_required
+@debug_login_optional
 def excluir_procedimento(paciente_id: int, plano_id: int, proc_id: int):  # Add type hints
     paciente = Paciente.query.get_or_404(paciente_id)
     plano = PlanoTratamento.query.get_or_404(plano_id)
@@ -946,7 +947,7 @@ def excluir_procedimento(paciente_id: int, plano_id: int, proc_id: int):  # Add 
     "/pacientes/<int:paciente_id>/planos/<int:plano_id>/procedimentos/adicionar",
     methods=["POST"],
 )
-@login_required
+@debug_login_optional
 def adicionar_procedimento(paciente_id: int, plano_id: int):  # Add type hints
     """Endpoint para adicionar procedimento via formulário ajax"""
     paciente = Paciente.query.get_or_404(paciente_id)
@@ -1007,7 +1008,7 @@ def adicionar_procedimento(paciente_id: int, plano_id: int):  # Add type hints
 
 
 @pacientes.route("/api/tratamentos/por-categoria/<int:categoria_id>")
-@login_required
+@debug_login_optional
 def tratamentos_por_categoria(categoria_id: int):  # Add type hint
     """Endpoint AJAX para buscar tratamentos de uma categoria"""
     tratamentos = Tratamento.query.filter_by(categoria_id=categoria_id, ativo=True).all()
@@ -1025,7 +1026,7 @@ def tratamentos_por_categoria(categoria_id: int):  # Add type hint
 
 
 @pacientes.route("/pacientes/<int:paciente_id>/historico")
-@login_required
+@debug_login_optional
 def listar_historico(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
     historicos = (
@@ -1041,7 +1042,7 @@ def listar_historico(paciente_id: int):  # Add type hint
 
 
 @pacientes.route("/pacientes/<int:paciente_id>/historico/novo", methods=["GET", "POST"])
-@login_required
+@debug_login_optional
 def novo_historico(paciente_id: int):  # Add type hint
     paciente = Paciente.query.get_or_404(paciente_id)
     form = HistoricoForm()
@@ -1069,7 +1070,7 @@ def novo_historico(paciente_id: int):  # Add type hint
 
 
 @pacientes.route("/pacientes/aniversarios")
-@login_required
+@debug_login_optional
 def aniversarios():
     """
     Exibe os pacientes que fazem aniversário no mês atual.
@@ -1098,7 +1099,7 @@ def aniversarios():
 
 # Rota para buscar pacientes por nome (para autocomplete)
 @pacientes.route("/search_pacientes", methods=["GET"])
-@login_required
+@debug_login_optional
 def search_pacientes() -> Response:
     search_term = request.args.get("term", "")
     if len(search_term) < 2:  # Minimum characters to search
@@ -1114,7 +1115,7 @@ def search_pacientes() -> Response:
 
 
 @pacientes.route("/api/pacientes/<int:paciente_id>/dados-receita")
-@login_required
+@debug_login_optional
 def obter_dados_paciente_receita(paciente_id: int):
     """API para obter dados básicos do paciente para uso em receitas."""
     try:

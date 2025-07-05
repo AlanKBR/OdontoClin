@@ -117,7 +117,7 @@
                                                                 <div class="modal-footer">
                                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                                                                     <form action="{{ url_for('pacientes.excluir_procedimento', paciente_id=paciente.id, plano_id=plano.id, proc_id=proc.id) }}"
-                                                                          method="POST">
+                                                                          method="post">
                                                                         <button type="submit" class="btn btn-danger">Excluir</button>
                                                                     </form>
                                                                 </div>
@@ -211,7 +211,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="formProcedimento"
-                          method="POST"
+                          method="post"
                           action="{{ url_for('pacientes.adicionar_procedimento', paciente_id=paciente.id, plano_id=plano.id) }}">
                         <!-- Abas para escolher entre catálogo ou procedimento personalizado -->
                         <ul class="nav nav-tabs mb-3" id="procedimentoTabs" role="tablist">
@@ -389,4 +389,4 @@
         // Other DOMContentLoaded logic from procedimentos.js or other scripts might be here
     });
     </script>
-{% endblock %}
+{% endblock scripts %}

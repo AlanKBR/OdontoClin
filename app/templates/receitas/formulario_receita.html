@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-
-{% block title %}Nova Receita | OdontoClinic{% endblock %}
-
+{% block title %}
+    Nova Receita | OdontoClinic
+{% endblock title %}
 {% block extra_css %}
-<style nonce="{{ csp_nonce() }}">
+    <style nonce="{{ csp_nonce() }}">
     .medicamento-item {
         cursor: pointer;
         transition: background-color 0.2s;
@@ -17,266 +17,352 @@
         border-radius: 0.25rem;
         padding: 1rem;
     }
-</style>
-{% endblock %}
-
+    </style>
+{% endblock extra_css %}
 {% block content %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2"><i class="bi bi-prescription2"></i> Nova Receita</h1>
-        <div class="btn-toolbar mb-2 mb-md-0">
-            <div class="btn-group me-2">
-                <a href="{{ url_for('receitas.index') }}" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Voltar
-                </a>
-                <button id="btn-imprimir" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-printer"></i> Imprimir
-                </button>
-                <button id="btn-salvar-modelo" class="btn btn-sm btn-outline-success"
-                        data-bs-toggle="modal" data-bs-target="#modalSalvarModelo">
-                    <i class="bi bi-save"></i> Salvar como Modelo
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div class="row">
-        <!-- Coluna de pesquisa de medicamentos -->
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0"><i class="bi bi-search"></i> Buscar Medicamentos</h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <input type="text" id="busca-medicamento" class="form-control"
-                               placeholder="Digite para buscar: nome, princípio ativo, categoria, indicações...">
-                    </div>
-
-                    <div id="resultados-medicamentos" class="list-group mt-3">
-                        <!-- Aqui serão mostrados os resultados da busca via JavaScript -->
-                    </div>
-                </div>
-            </div>
-
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0"><i class="bi bi-bookmark"></i> Meus Modelos</h5>
-                </div>
-                <div class="card-body">
-                    <select id="select-modelos" class="form-select mb-2">
-                        <option value="">Selecione um modelo...</option>
-                        <!-- Os modelos serão carregados via JavaScript -->
-                    </select>
-                    <button id="btn-carregar-modelo" class="btn btn-sm btn-outline-primary w-100">
-                        Carregar Modelo
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">
+                <i class="bi bi-prescription2"></i> Nova Receita
+            </h1>
+            <div class="btn-toolbar mb-2 mb-md-0">
+                <div class="btn-group me-2">
+                    <a href="{{ url_for("receitas.index") }}"
+                       class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Voltar
+                    </a>
+                    <button id="btn-imprimir" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-printer"></i> Imprimir
+                    </button>
+                    <button id="btn-salvar-modelo"
+                            class="btn btn-sm btn-outline-success"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalSalvarModelo">
+                        <i class="bi bi-save"></i> Salvar como Modelo
                     </button>
                 </div>
             </div>
         </div>
-
-        <!-- Coluna do editor de receita -->
-        <div class="col-md-8">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="card-title mb-0"><i class="bi bi-pencil-square"></i> Editor de Receita</h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <label for="data-receita" class="form-label">Data:</label>
-                        <input type="text" id="data-receita" class="form-control" placeholder="dd/mm/aaaa">
+        <div class="row">
+            <!-- Coluna de pesquisa de medicamentos -->
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-search"></i> Buscar Medicamentos
+                        </h5>
                     </div>
-
-                    <div class="mb-3 position-relative">
-                        <label for="paciente-receita" class="form-label">Paciente:</label>
-                        <select id="paciente-receita" name="paciente" class="form-select" required>
-                            <option value="">Selecione um paciente...</option>
-                            {% if pacientes %}
-                                {% for paciente in pacientes %}
-                                    <option value="{{ paciente.id }}">{{ paciente.nome }}</option>
-                                {% endfor %}
-                            {% endif %}
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <input type="text"
+                                   id="busca-medicamento"
+                                   class="form-control"
+                                   placeholder="Digite para buscar: nome, princípio ativo, categoria, indicações...">
+                        </div>
+                        <div id="resultados-medicamentos" class="list-group mt-3">
+                            <!-- Aqui serão mostrados os resultados da busca via JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-bookmark"></i> Meus Modelos
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <select id="select-modelos" class="form-select mb-2">
+                            <option value="">Selecione um modelo...</option>
+                            <!-- Os modelos serão carregados via JavaScript -->
                         </select>
+                        <button id="btn-carregar-modelo" class="btn btn-sm btn-outline-primary w-100">Carregar Modelo</button>
                     </div>
-
-                    <div class="mb-3">
-                        <label for="dentista-receita" class="form-label">Dentista Responsável:</label>
-                        {% if current_user.cargo == 'dentista' %}
-                            <input type="text" class="form-control" id="dentista-receita" name="dentista" value="{{ current_user.nome_profissional }}" readonly>
-                            <input type="hidden" name="dentista_id" value="{{ current_user.id }}">
-                        {% else %}
-                            <select id="dentista-receita" name="dentista_id" class="form-select" required>
-                                <option value="">Selecione o dentista...</option>
-                                {% for dentista in dentistas %}
-                                    <option value="{{ dentista.id }}">{{ dentista.nome_profissional }}</option>
-                                {% endfor %}
+                </div>
+            </div>
+            <!-- Coluna do editor de receita -->
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-pencil-square"></i> Editor de Receita
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="data-receita" class="form-label">Data:</label>
+                            <input type="text"
+                                   id="data-receita"
+                                   class="form-control"
+                                   placeholder="dd/mm/aaaa">
+                        </div>
+                        <div class="mb-3 position-relative">
+                            <label for="paciente-receita" class="form-label">Paciente:</label>
+                            <select id="paciente-receita" name="paciente" class="form-select" required>
+                                <option value="">Selecione um paciente...</option>
+                                {% if pacientes %}
+                                    {% for paciente in pacientes %}<option value="{{ paciente.id }}">{{ paciente.nome }}</option>{% endfor %}
+                                {% endif %}
                             </select>
-                        {% endif %}
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="editor-receita" class="form-label">Prescrição:</label>
-                        <div id="editor-receita" class="form-control" contenteditable="true"></div>
-                    </div>
-
-                    <div class="mt-3 text-end">
-                        <button id="btn-limpar" class="btn btn-outline-danger me-2">
-                            <i class="bi bi-trash"></i> Limpar
-                        </button>
-                        <button id="btn-imprimir-interno" class="btn btn-primary">
-                            <i class="bi bi-printer"></i> Imprimir
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Detalhes do medicamento selecionado -->
-            <div id="card-detalhes-medicamento" class="card mb-4 d-none">
-                <div class="card-header">
-                    <h5 class="card-title mb-0"><i class="bi bi-info-circle"></i>
-                        <span id="titulo-medicamento-selecionado">Detalhes do Medicamento</span>
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div id="detalhes-medicamento">
-                        <!-- Aqui serão mostrados os detalhes do medicamento selecionado via JavaScript -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal para Salvar Modelo -->
-<div class="modal fade" id="modalSalvarModelo" tabindex="-1" aria-labelledby="modalSalvarModeloLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalSalvarModeloLabel">Salvar como Modelo</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-            </div>
-            <form action="{{ url_for('receitas.salvar_modelo') }}" method="POST">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="titulo-modelo" class="form-label">Título do Modelo:</label>
-                        <input type="text" id="titulo-modelo" name="titulo" class="form-control" required>
-                    </div>
-                    <input type="hidden" id="conteudo-modelo" name="conteudo">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Salvar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Template para impressão -->
-<div id="template-impressao" style="display: none;">
-    <div style="font-family: 'Times New Roman', serif; max-width: 210mm; margin: 0 auto; padding: 20mm; background: white; color: #333;">
-        <!-- Cabeçalho da clínica -->
-        <div style="border-bottom: 2px solid #2c5aa0; padding-bottom: 15px; margin-bottom: 25px;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div style="flex: 1;">
-                    <h1 style="color: #2c5aa0; margin: 0; font-size: 28px; font-weight: bold;">{{ clinica_global.nome if clinica_global else 'OdontoClinic' }}</h1>
-                    <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">Clínica Odontológica Especializada</p>
-                    <div style="margin-top: 10px; font-size: 12px; color: #666;">
-                        {% if clinica_global and clinica_global.endereco %}
-                        <p style="margin: 2px 0;">📍 {{ clinica_global.endereco }}{% if clinica_global.cep %} - CEP {{ clinica_global.cep }}{% endif %}</p>
-                        {% else %}
-                        <p style="margin: 2px 0;">📍 Endereço da Clínica - CEP 00000-000</p>
-                        {% endif %}
-                        <p style="margin: 2px 0;">
-                            {% if clinica_global and (clinica_global.telefone or clinica_global.celular) %}
-                                {% if clinica_global.telefone %}📞 {{ clinica_global.telefone }}{% endif %}
-                                {% if clinica_global.telefone and clinica_global.celular %} | {% endif %}
-                                {% if clinica_global.celular %}📱 {{ clinica_global.celular }}{% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="dentista-receita" class="form-label">Dentista Responsável:</label>
+                            {% if current_user.cargo == 'dentista' %}
+                                <input type="text"
+                                       class="form-control"
+                                       id="dentista-receita"
+                                       name="dentista"
+                                       value="{{ current_user.nome_profissional }}"
+                                       readonly>
+                                <input type="hidden" name="dentista_id" value="{{ current_user.id }}">
                             {% else %}
-                                📞 (11) 0000-0000 | 📱 (11) 90000-0000
+                                <select id="dentista-receita" name="dentista_id" class="form-select" required>
+                                    <option value="">Selecione o dentista...</option>
+                                    {% for dentista in dentistas %}<option value="{{ dentista.id }}">{{ dentista.nome_profissional }}</option>{% endfor %}
+                                </select>
                             {% endif %}
-                        </p>
-                        {% if clinica_global and clinica_global.email %}
-                        <p style="margin: 2px 0;">✉️ {{ clinica_global.email }}</p>
-                        {% else %}
-                        <p style="margin: 2px 0;">✉️ contato@odontoclinic.com.br</p>
-                        {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="editor-receita" class="form-label">Prescrição:</label>
+                            <div id="editor-receita" class="form-control" contenteditable="true"></div>
+                        </div>
+                        <div class="mt-3 text-end">
+                            <button id="btn-limpar" class="btn btn-outline-danger me-2">
+                                <i class="bi bi-trash"></i> Limpar
+                            </button>
+                            <button id="btn-imprimir-interno" class="btn btn-primary">
+                                <i class="bi bi-printer"></i> Imprimir
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div style="text-align: center; margin-left: 20px;">
-                    <!-- Logo da clínica -->
-                    <div style="width: 80px; height: 80px; border: 2px solid #2c5aa0; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                        <img id="print-logo" src="{{ url_for('main.uploaded_logo', filename='clinic_logo.png') }}" 
-                             alt="Logo da Clínica" width="80" height="80"
-                             style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" 
-                             onerror="this.style.display='none'; this.parentNode.innerHTML='<span style=\'color: #2c5aa0; font-weight: bold; font-size: 14px;\'>LOGO</span>'">
+                <!-- Detalhes do medicamento selecionado -->
+                <div id="card-detalhes-medicamento" class="card mb-4 d-none">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-info-circle"></i>
+                            <span id="titulo-medicamento-selecionado">Detalhes do Medicamento</span>
+                        </h5>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Título do documento -->
-        <div style="text-align: center; margin-bottom: 30px;">
-            <h2 style="color: #2c5aa0; margin: 0; font-size: 24px; letter-spacing: 2px; border: 2px solid #2c5aa0; padding: 10px; display: inline-block;">
-                RECEITUÁRIO ODONTOLÓGICO
-            </h2>
-        </div>
-
-        <!-- Informações do paciente e data -->
-        <div style="background: #f8f9fa; padding: 15px; border-left: 4px solid #2c5aa0; margin-bottom: 25px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="flex: 1;">
-                    <p style="margin: 0; font-size: 16px;"><strong>Paciente:</strong> <span id="print-paciente-nome" style="color: #2c5aa0; font-weight: bold;"></span></p>
-                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;"><strong>Data de Nascimento:</strong> <span id="print-paciente-nascimento"></span></p>
-                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;"><strong>CPF:</strong> <span id="print-paciente-cpf"></span></p>
-                </div>
-                <div style="text-align: right; margin-left: 20px;">
-                    <p style="margin: 0; font-size: 16px;"><strong>Data:</strong> <span id="print-data" style="color: #2c5aa0; font-weight: bold;"></span></p>
-                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;"><strong>Receita Nº:</strong> <span id="print-numero-receita"></span></p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Prescrição médica -->
-        <div style="border: 1px solid #ddd; border-radius: 5px; padding: 20px; margin-bottom: 30px; min-height: 200px; background: white;">
-            <h3 style="margin: 0 0 15px 0; color: #2c5aa0; font-size: 18px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
-                PRESCRIÇÃO
-            </h3>
-            <div id="print-prescricao" style="font-size: 14px; line-height: 1.8; color: #333; margin-left: 20px;"></div>
-        </div>
-
-        <!-- Informações do dentista -->
-        <div style="margin-top: 40px; border-top: 1px solid #ddd; padding-top: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: end;">
-                <div style="flex: 1;">
-                    <div style="margin-bottom: 20px;">
-                        <!-- Informações removidas: contagem de medicamentos e data de emissão -->
-                    </div>
-                </div>
-                <div style="text-align: center; margin-left: 40px;">
-                    <div style="border-top: 2px solid #000; width: 250px; margin-bottom: 10px;"></div>
-                    <div style="text-align: center;">
-                        <p style="margin: 0; font-size: 16px; font-weight: bold; color: #2c5aa0;" id="print-dentista-nome">{{ current_user.nome_completo }}</p>
-                        <p style="margin: 3px 0; font-size: 14px; color: #666;">Cirurgião-Dentista</p>
-                        <p style="margin: 3px 0; font-size: 14px; font-weight: bold;">CRO-<span id="print-dentista-cro">{{ current_user.cro }}</span></p>
-                        <p style="margin: 3px 0; font-size: 12px; color: #666;" id="print-dentista-especialidade"></p>
+                    <div class="card-body">
+                        <div id="detalhes-medicamento">
+                            <!-- Aqui serão mostrados os detalhes do medicamento selecionado via JavaScript -->
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Rodapé com informações importantes -->
-        <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #eee; font-size: 10px; color: #666; text-align: center;">
-            <p style="margin: 0;">⚠️ <strong>IMPORTANTE:</strong> Esta receita é válida em todo território nacional por 30 dias.</p>
-            <p style="margin: 5px 0 0 0;">Siga rigorosamente as orientações médicas. Em caso de dúvidas, consulte seu dentista.</p>
-            <p style="margin: 5px 0 0 0;">Este documento foi gerado eletronicamente e possui validade legal.</p>
         </div>
     </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script nonce="{{ csp_nonce() }}">
+    <!-- Modal para Salvar Modelo -->
+    <div class="modal fade"
+         id="modalSalvarModelo"
+         tabindex="-1"
+         aria-labelledby="modalSalvarModeloLabel"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalSalvarModeloLabel">Salvar como Modelo</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Fechar"></button>
+                </div>
+                <form action="{{ url_for("receitas.salvar_modelo") }}" method="post">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="titulo-modelo" class="form-label">Título do Modelo:</label>
+                            <input type="text"
+                                   id="titulo-modelo"
+                                   name="titulo"
+                                   class="form-control"
+                                   required>
+                        </div>
+                        <input type="hidden" id="conteudo-modelo" name="conteudo">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Template para impressão -->
+    <div id="template-impressao" style="display: none;">
+        <div style="font-family: 'Times New Roman', serif;
+                    max-width: 210mm;
+                    margin: 0 auto;
+                    padding: 20mm;
+                    background: white;
+                    color: #333">
+            <!-- Cabeçalho da clínica -->
+            <div style="border-bottom: 2px solid #2c5aa0;
+                        padding-bottom: 15px;
+                        margin-bottom: 25px">
+                <div style="display: flex;
+                            align-items: center;
+                            justify-content: space-between">
+                    <div style="flex: 1;">
+                        <h1 style="color: #2c5aa0; margin: 0; font-size: 28px; font-weight: bold">
+                            {{ clinica_global.nome if clinica_global else 'OdontoClinic' }}
+                        </h1>
+                        <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">Clínica Odontológica Especializada</p>
+                        <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                            {% if clinica_global and clinica_global.endereco %}
+                                <p style="margin: 2px 0;">
+                                    📍 {{ clinica_global.endereco }}
+                                    {% if clinica_global.cep %}- CEP {{ clinica_global.cep }}{% endif %}
+                                </p>
+                            {% else %}
+                                <p style="margin: 2px 0;">📍 Endereço da Clínica - CEP 00000-000</p>
+                            {% endif %}
+                            <p style="margin: 2px 0;">
+                                {% if clinica_global and (clinica_global.telefone or clinica_global.celular) %}
+                                    {% if clinica_global.telefone %}📞 {{ clinica_global.telefone }}{% endif %}
+                                    {% if clinica_global.telefone and clinica_global.celular %}|{% endif %}
+                                    {% if clinica_global.celular %}📱 {{ clinica_global.celular }}{% endif %}
+                                {% else %}
+                                    📞 (11) 0000-0000 | 📱 (11) 90000-0000
+                                {% endif %}
+                            </p>
+                            {% if clinica_global and clinica_global.email %}
+                                <p style="margin: 2px 0;">✉️ {{ clinica_global.email }}</p>
+                            {% else %}
+                                <p style="margin: 2px 0;">✉️ contato@odontoclinic.com.br</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div style="text-align: center; margin-left: 20px;">
+                        <!-- Logo da clínica -->
+                        <div style="width: 80px;
+                                    height: 80px;
+                                    border: 2px solid #2c5aa0;
+                                    border-radius: 50%;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    overflow: hidden">
+                            <img id="print-logo"
+                                 src="{{ url_for('main.uploaded_logo', filename='clinic_logo.png') }}"
+                                 alt="Logo da Clínica"
+                                 width="80"
+                                 height="80"
+                                 style="width: 100%;
+                                        height: 100%;
+                                        object-fit: cover;
+                                        border-radius: 50%"
+                                 onerror="this.style.display='none'; this.parentNode.innerHTML='<span style=\'color: #2c5aa0; font-weight: bold; font-size: 14px;\'>LOGO</span>'">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Título do documento -->
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h2 style="color: #2c5aa0;
+                               margin: 0;
+                               font-size: 24px;
+                               letter-spacing: 2px;
+                               border: 2px solid #2c5aa0;
+                               padding: 10px;
+                               display: inline-block">RECEITUÁRIO ODONTOLÓGICO</h2>
+                </div>
+                <!-- Informações do paciente e data -->
+                <div style="background: #f8f9fa;
+                            padding: 15px;
+                            border-left: 4px solid #2c5aa0;
+                            margin-bottom: 25px">
+                    <div style="display: flex;
+                                justify-content: space-between;
+                                align-items: center">
+                        <div style="flex: 1;">
+                            <p style="margin: 0; font-size: 16px;">
+                                <strong>Paciente:</strong> <span id="print-paciente-nome" style="color: #2c5aa0; font-weight: bold;"></span>
+                            </p>
+                            <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">
+                                <strong>Data de Nascimento:</strong> <span id="print-paciente-nascimento"></span>
+                            </p>
+                            <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">
+                                <strong>CPF:</strong> <span id="print-paciente-cpf"></span>
+                            </p>
+                        </div>
+                        <div style="text-align: right; margin-left: 20px;">
+                            <p style="margin: 0; font-size: 16px;">
+                                <strong>Data:</strong> <span id="print-data" style="color: #2c5aa0; font-weight: bold;"></span>
+                            </p>
+                            <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">
+                                <strong>Receita Nº:</strong> <span id="print-numero-receita"></span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Prescrição médica -->
+                <div style="border: 1px solid #ddd;
+                            border-radius: 5px;
+                            padding: 20px;
+                            margin-bottom: 30px;
+                            min-height: 200px;
+                            background: white">
+                    <h3 style="margin: 0 0 15px 0;
+                               color: #2c5aa0;
+                               font-size: 18px;
+                               border-bottom: 1px solid #eee;
+                               padding-bottom: 10px">PRESCRIÇÃO</h3>
+                    <div id="print-prescricao"
+                         style="font-size: 14px;
+                                line-height: 1.8;
+                                color: #333;
+                                margin-left: 20px"></div>
+                </div>
+                <!-- Informações do dentista -->
+                <div style="margin-top: 40px;
+                            border-top: 1px solid #ddd;
+                            padding-top: 20px">
+                    <div style="display: flex;
+                                justify-content: space-between;
+                                align-items: end">
+                        <div style="flex: 1;">
+                            <div style="margin-bottom: 20px;">
+                                <!-- Informações removidas: contagem de medicamentos e data de emissão -->
+                            </div>
+                        </div>
+                        <div style="text-align: center; margin-left: 40px;">
+                            <div style="border-top: 2px solid #000; width: 250px; margin-bottom: 10px"></div>
+                            <div style="text-align: center;">
+                                <p style="margin: 0;
+                                          font-size: 16px;
+                                          font-weight: bold;
+                                          color: #2c5aa0"
+                                   id="print-dentista-nome">{{ current_user.nome_completo }}</p>
+                                <p style="margin: 3px 0; font-size: 14px; color: #666;">Cirurgião-Dentista</p>
+                                <p style="margin: 3px 0; font-size: 14px; font-weight: bold;">
+                                    CRO-<span id="print-dentista-cro">{{ current_user.cro }}</span>
+                                </p>
+                                <p style="margin: 3px 0;
+                                          font-size: 12px;
+                                          color: #666"
+                                   id="print-dentista-especialidade"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Rodapé com informações importantes -->
+                <div style="margin-top: 30px;
+                            padding-top: 15px;
+                            border-top: 1px solid #eee;
+                            font-size: 10px;
+                            color: #666;
+                            text-align: center">
+                    <p style="margin: 0;">
+                        ⚠️ <strong>IMPORTANTE:</strong> Esta receita é válida em todo território nacional por 30 dias.
+                    </p>
+                    <p style="margin: 5px 0 0 0;">Siga rigorosamente as orientações médicas. Em caso de dúvidas, consulte seu dentista.</p>
+                    <p style="margin: 5px 0 0 0;">Este documento foi gerado eletronicamente e possui validade legal.</p>
+                </div>
+            </div>
+        </div>
+    {% endblock content %}
+    {% block extra_js %}
+        <script nonce="{{ csp_nonce() }}">
 document.addEventListener('DOMContentLoaded', function() {
     const buscaInput = document.getElementById('busca-medicamento');
     const resultadosDiv = document.getElementById('resultados-medicamentos');
@@ -562,6 +648,8 @@ document.addEventListener('DOMContentLoaded', function() {
             <html>
             <head>
                 <title>Receita Odontológica</title>
+    <meta name="description" content="Sistema de gestão odontológica OdontoClinic">
+    <meta name="keywords" content="odontologia, dentista, gestão, clínica, pacientes">
                 <meta charset="UTF-8">
                 <style>
                     @media print {
@@ -582,7 +670,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             padding: 20px;
                         }
                     }
-                </style>
+</style>
             </head>
             <body>${template}</body>
             </html>
@@ -741,5 +829,5 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-</script>
-{% endblock %}
+        </script>
+    {% endblock extra_js %}

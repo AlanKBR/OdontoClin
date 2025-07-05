@@ -1,5 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Lista de Pacientes{% endblock %}
+{% block title %}
+    Lista de Pacientes
+{% endblock title %}
 {% block content %}
     <style>
     .no-patients-icon {
@@ -9,7 +11,7 @@
     <div class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="h3">Lista de Pacientes</h2>
-            <a href="{{ url_for('pacientes.novo_paciente') }}"
+            <a href="{{ url_for("pacientes.novo_paciente") }}"
                class="btn btn-primary">
                 <i class="bi bi-person-plus"></i> Novo Paciente
             </a>
@@ -18,7 +20,7 @@
         <div class="card shadow mb-4">
             <div class="card-body">
                 <form method="get"
-                      action="{{ url_for('pacientes.listar_pacientes') }}"
+                      action="{{ url_for("pacientes.listar_pacientes") }}"
                       class="row g-3 align-items-center">
                     <div class="col-md-10">
                         <div class="input-group">
@@ -73,19 +75,28 @@
                                                 <i class="bi bi-trash"></i> Excluir
                                             </button>
                                             <!-- Modal de confirmação de exclusão -->
-                                            <div class="modal fade" id="deleteModal{{ paciente.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ paciente.id }}" aria-hidden="true">
+                                            <div class="modal fade"
+                                                 id="deleteModal{{ paciente.id }}"
+                                                 tabindex="-1"
+                                                 aria-labelledby="deleteModalLabel{{ paciente.id }}"
+                                                 aria-hidden="true">
                                                 <div class="modal-dialog">
                                                     <div class="modal-content">
                                                         <div class="modal-header">
                                                             <h5 class="modal-title" id="deleteModalLabel{{ paciente.id }}">Confirmar exclusão</h5>
-                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            <button type="button"
+                                                                    class="btn-close"
+                                                                    data-bs-dismiss="modal"
+                                                                    aria-label="Close"></button>
                                                         </div>
                                                         <div class="modal-body">
                                                             Tem certeza que deseja excluir o paciente <strong>{{ paciente.nome }}</strong>? Esta ação não pode ser desfeita e todos os dados relacionados ao paciente serão removidos.
                                                         </div>
                                                         <div class="modal-footer">
                                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                                            <form method="POST" class="form-confirm-delete" action="{{ url_for('pacientes.excluir_paciente', paciente_id=paciente.id) }}">
+                                                            <form method="post"
+                                                                  class="form-confirm-delete"
+                                                                  action="{{ url_for('pacientes.excluir_paciente', paciente_id=paciente.id) }}">
                                                                 <button type="submit" class="btn btn-danger btn-confirm-delete">Excluir</button>
                                                             </form>
                                                         </div>
@@ -151,11 +162,11 @@
                         <p class="lead">Nenhum paciente encontrado.</p>
                         {% if busca %}
                             <p>
-                                Tente refinar sua busca ou <a href="{{ url_for('pacientes.listar_pacientes') }}">limpar o filtro</a>.
+                                Tente refinar sua busca ou <a href="{{ url_for("pacientes.listar_pacientes") }}">limpar o filtro</a>.
                             </p>
                         {% else %}
                             <p>
-                                Comece <a href="{{ url_for('pacientes.novo_paciente') }}">cadastrando um novo
+                                Comece <a href="{{ url_for("pacientes.novo_paciente") }}">cadastrando um novo
                                 paciente</a>.
                             </p>
                         {% endif %}
@@ -164,10 +175,10 @@
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}
 {% block extra_js %}
-{{ super() }}
-<script nonce="{{ csp_nonce() if csp_nonce else '' }}">
+    {{ super() }}
+    <script nonce="{{ csp_nonce() if csp_nonce else '' }}">
 // Script para desabilitar botão de exclusão e mostrar spinner
 document.addEventListener('DOMContentLoaded', function () {
     const deleteForms = document.querySelectorAll('.form-confirm-delete');
@@ -182,5 +193,5 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
-</script>
-{% endblock %}
+    </script>
+{% endblock extra_js %}

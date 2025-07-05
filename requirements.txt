@@ -7,3 +7,19 @@ markupsafe==2.1.5
 email-validator
 requests
 Flask-Mobility==1.1.0
+
+# AI Dependencies (Optional - for AI Assistant)
+# Primary: vLLM (high performance, Linux/WSL recommended)
+# vllm>=0.2.7
+# 
+# Local AI Providers (Windows compatible):
+# For NVIDIA GPU: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+# For AMD GPU (RX 5700): pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.6
+# For CPU only: pip install torch torchvision torchaudio
+torch>=2.0.0
+transformers>=4.30.0
+accelerate>=0.20.0
+sentencepiece>=0.1.99
+# Utilities
+requests>=2.31.0
+psutil>=5.9.0

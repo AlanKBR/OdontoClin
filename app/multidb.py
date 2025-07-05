@@ -43,10 +43,12 @@ class MultiDB:
         # Configurar bancos de dados separados
         self.configure_db("users", app.config.get("USERS_DATABASE_URI", "sqlite:///users.db"))
         self.configure_db(
-            "pacientes", app.config.get("PACIENTES_DATABASE_URI", "sqlite:///pacientes.db")
+            "pacientes",
+            app.config.get("PACIENTES_DATABASE_URI", "sqlite:///pacientes.db"),
         )
         self.configure_db(
-            "tratamentos", app.config.get("TRATAMENTOS_DATABASE_URI", "sqlite:///tratamentos.db")
+            "tratamentos",
+            app.config.get("TRATAMENTOS_DATABASE_URI", "sqlite:///tratamentos.db"),
         )
         self.configure_db(
             "receitas", app.config.get("RECEITAS_DATABASE_URI", "sqlite:///receitas.db")

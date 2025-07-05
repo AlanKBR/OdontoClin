@@ -1,11 +1,13 @@
 {% extends "base.html" %}
-{% block title %}{{ categoria.nome }} - Tratamentos{% endblock %}
+{% block title %}
+    {{ categoria.nome }} - Tratamentos
+{% endblock title %}
 {% block content %}
     <div class="container-fluid py-4">
         <nav aria-label="breadcrumb" class="mb-3">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">
-                    <a href="{{ url_for('tratamentos.lista_categorias') }}">Categorias</a>
+                    <a href="{{ url_for("tratamentos.lista_categorias") }}">Categorias</a>
                 </li>
                 <li class="breadcrumb-item active">{{ categoria.nome }}</li>
             </ol>
@@ -16,7 +18,7 @@
                 {% if categoria.descricao %}<p class="text-muted">{{ categoria.descricao }}</p>{% endif %}
             </div>
             <div>
-                <a href="{{ url_for('tratamentos.novo_tratamento') }}"
+                <a href="{{ url_for("tratamentos.novo_tratamento") }}"
                    class="btn btn-primary">
                     <i class="bi bi-plus-circle"></i> Novo Tratamento
                 </a>            <a href="{{ url_for('tratamentos.editar_categoria', categoria_id=categoria.id) }}"
@@ -86,7 +88,7 @@
                                                     <div class="modal-footer">
                                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                                                         <form action="{{ url_for('tratamentos.excluir_tratamento', tratamento_id=tratamento.id) }}"
-                                                              method="POST">
+                                                              method="post">
                                                             <button type="submit" class="btn btn-danger">Excluir</button>
                                                         </form>
                                                     </div>
@@ -102,7 +104,7 @@
             {% else %}
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle"></i> Nenhum tratamento cadastrado nesta categoria.
-                    <a href="{{ url_for('tratamentos.novo_tratamento') }}"
+                    <a href="{{ url_for("tratamentos.novo_tratamento") }}"
                        class="alert-link">Adicione um novo
                         tratamento</a>.
                     </div>
@@ -110,4 +112,4 @@
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

@@ -1,128 +1,111 @@
 {% extends "mobile/base.html" %}
-
-{% block title %}Financeiro - {{ paciente.nome }}{% endblock %}
-
+{% block title %}
+    Financeiro - {{ paciente.nome }}
+{% endblock title %}
 {% block content %}
-<div class="mobile-financial-container">
-    <div class="mobile-header">
-        <div class="header-info">
-            <h2>{{ paciente.nome }}</h2>
-            <p class="subtitle">Financeiro</p>
-        </div>
-        <a href="{{ url_for('pacientes.visualizar_paciente', paciente_id=paciente.id) }}" class="btn-back">
-            <i class="fas fa-arrow-left"></i>
-            Voltar
-        </a>
-    </div>
-
-    <!-- Summary Cards -->
-    <div class="summary-cards">
-        <div class="summary-card credit">
-            <div class="card-icon">
-                <i class="fas fa-arrow-up"></i>
+    <div class="mobile-financial-container">
+        <div class="mobile-header">
+            <div class="header-info">
+                <h2>{{ paciente.nome }}</h2>
+                <p class="subtitle">Financeiro</p>
             </div>
-            <div class="card-content">
-                <h3>R$ {{ "%.2f"|format(total_credito) }}</h3>
-                <p>Créditos</p>
-            </div>
-        </div>
-
-        <div class="summary-card debit">
-            <div class="card-icon">
-                <i class="fas fa-arrow-down"></i>
-            </div>
-            <div class="card-content">
-                <h3>R$ {{ "%.2f"|format(total_debito) }}</h3>
-                <p>Débitos</p>
-            </div>
-        </div>
-
-        <div class="summary-card balance">
-            <div class="card-icon">
-                <i class="fas fa-wallet"></i>
-            </div>
-            <div class="card-content">
-                <h3>R$ {{ "%.2f"|format(saldo) }}</h3>
-                <p>Total Pago</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="quick-actions">
-        <a href="{{ url_for('pacientes.novo_financeiro', paciente_id=paciente.id) }}" class="action-btn primary">
-            <i class="fas fa-plus"></i>
-            Novo Lançamento
-        </a>
-    </div>
-
-    <!-- Transactions List -->
-    <div class="transactions-section">
-        <h3>Lançamentos</h3>
-
-        {% if lancamentos %}
-        <div class="transactions-list">
-            {% for lancamento in lancamentos %}
-            <div class="transaction-card">
-                <div class="transaction-header">
-                    <div class="transaction-date">
-                        <i class="fas fa-calendar"></i>
-                        {{ lancamento.data_lancamento.strftime('%d/%m/%Y') if lancamento.data_lancamento }}
-                    </div>
-                    <div class="transaction-value {{ 'credit' if lancamento.tipo == 'Crédito' else 'debit' }}">
-                        R$ {{ "%.2f"|format(lancamento.valor) }}
-                    </div>
-                </div>
-
-                <div class="transaction-body">
-                    <div class="transaction-description">
-                        {{ lancamento.descricao }}
-                    </div>
-
-                    <div class="transaction-details">
-                        <span class="transaction-type {{ 'credit' if lancamento.tipo == 'Crédito' else 'debit' }}">
-                            {{ lancamento.tipo }}
-                        </span>
-
-                        <span class="transaction-payment">
-                            {{ lancamento.forma_pagamento }}
-                        </span>
-
-                        <span class="transaction-status {{ lancamento.status.lower() }}">
-                            {{ lancamento.status }}
-                        </span>
-                    </div>
-                </div>
-
-                <div class="transaction-actions">
-                    <button class="action-btn secondary small" title="Ver detalhes">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="action-btn primary small" title="Editar">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="action-btn danger small" title="Excluir">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="empty-state">
-            <i class="fas fa-file-invoice-dollar"></i>
-            <h3>Nenhum lançamento</h3>
-            <p>Não há lançamentos financeiros registrados para este paciente.</p>
-            <a href="{{ url_for('pacientes.novo_financeiro', paciente_id=paciente.id) }}" class="action-btn primary">
-                <i class="fas fa-plus"></i>
-                Adicionar Primeiro Lançamento
+            <a href="{{ url_for('pacientes.visualizar_paciente', paciente_id=paciente.id) }}"
+               class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+                Voltar
             </a>
         </div>
-        {% endif %}
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+            <div class="summary-card credit">
+                <div class="card-icon">
+                    <i class="fas fa-arrow-up"></i>
+                </div>
+                <div class="card-content">
+                    <h3>R$ {{ "%.2f"|format(total_credito) }}</h3>
+                    <p>Créditos</p>
+                </div>
+            </div>
+            <div class="summary-card debit">
+                <div class="card-icon">
+                    <i class="fas fa-arrow-down"></i>
+                </div>
+                <div class="card-content">
+                    <h3>R$ {{ "%.2f"|format(total_debito) }}</h3>
+                    <p>Débitos</p>
+                </div>
+            </div>
+            <div class="summary-card balance">
+                <div class="card-icon">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <div class="card-content">
+                    <h3>R$ {{ "%.2f"|format(saldo) }}</h3>
+                    <p>Total Pago</p>
+                </div>
+            </div>
+        </div>
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <a href="{{ url_for('pacientes.novo_financeiro', paciente_id=paciente.id) }}"
+               class="action-btn primary">
+                <i class="fas fa-plus"></i>
+                Novo Lançamento
+            </a>
+        </div>
+        <!-- Transactions List -->
+        <div class="transactions-section">
+            <h3>Lançamentos</h3>
+            {% if lancamentos %}
+                <div class="transactions-list">
+                    {% for lancamento in lancamentos %}
+                        <div class="transaction-card">
+                            <div class="transaction-header">
+                                <div class="transaction-date">
+                                    <i class="fas fa-calendar"></i>
+                                    {{ lancamento.data_lancamento.strftime("%d/%m/%Y") if lancamento.data_lancamento }}
+                                </div>
+                                <div class="transaction-value {{ 'credit' if lancamento.tipo == 'Crédito' else 'debit' }}">
+                                    R$ {{ "%.2f"|format(lancamento.valor) }}
+                                </div>
+                            </div>
+                            <div class="transaction-body">
+                                <div class="transaction-description">{{ lancamento.descricao }}</div>
+                                <div class="transaction-details">
+                                    <span class="transaction-type {{ 'credit' if lancamento.tipo == 'Crédito' else 'debit' }}">{{ lancamento.tipo }}</span>
+                                    <span class="transaction-payment">{{ lancamento.forma_pagamento }}</span>
+                                    <span class="transaction-status {{ lancamento.status.lower() }}">{{ lancamento.status }}</span>
+                                </div>
+                            </div>
+                            <div class="transaction-actions">
+                                <button class="action-btn secondary small" title="Ver detalhes">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="action-btn primary small" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="action-btn danger small" title="Excluir">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <h3>Nenhum lançamento</h3>
+                    <p>Não há lançamentos financeiros registrados para este paciente.</p>
+                    <a href="{{ url_for('pacientes.novo_financeiro', paciente_id=paciente.id) }}"
+                       class="action-btn primary">
+                        <i class="fas fa-plus"></i>
+                        Adicionar Primeiro Lançamento
+                    </a>
+                </div>
+            {% endif %}
+        </div>
     </div>
-</div>
-
-<style>
+    <style>
     .mobile-financial-container {
         padding: 1rem;
         max-width: 100%;
@@ -428,5 +411,5 @@
             justify-content: center;
         }
     }
-</style>
-{% endblock %}
+    </style>
+{% endblock content %}

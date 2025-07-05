@@ -18,7 +18,27 @@ class User(UserMixin, db.Model):
     nome_profissional = db.Column(db.String(120), nullable=False)  # Professional name field
     password_hash = db.Column(db.String(256))  # Aumentado para 256
     cargo = db.Column(db.String(50), nullable=False, default="dentista")  # Novo campo para cargo
-    is_active = db.Column(db.Boolean, default=True)
+
+    def __init__(
+        self,
+        username=None,
+        nome_completo=None,
+        nome_profissional=None,
+        cro=None,
+        cargo="dentista",
+        **kwargs,
+    ):
+        """Initialize User instance with parameters."""
+        super().__init__(**kwargs)
+        if username is not None:
+            self.username = username
+        if nome_completo is not None:
+            self.nome_completo = nome_completo
+        if nome_profissional is not None:
+            self.nome_profissional = nome_profissional
+        if cro is not None:
+            self.cro = cro
+        self.cargo = cargo
 
     def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)

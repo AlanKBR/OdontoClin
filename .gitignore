@@ -74,6 +74,16 @@ coverage.xml
 Thumbs.db
 .DS_Store
 
+# Model cache and AI-related temporary files
+models_cache/downloads/
+models_cache/temp/
+*.tmp
+*.temp
+
+# Instance databases (depending on your policy)
+# instance/*.db
+
+# Development and legacy files
 legacy/
 node_modules/
 
@@ -88,4 +98,12 @@ node_modules/
 *.pylintrc
 *.flake8
 *.envrc
-lint.py
+
+# Development/test scripts that shouldn't be committed
+*test*.py
+*debug*.py
+*clean*.js
+*backup*.js
+*old*.js
+*new*.js
+REMOVER-*.txt

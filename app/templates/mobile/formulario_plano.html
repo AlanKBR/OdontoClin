@@ -1,68 +1,59 @@
 {% extends "mobile/base.html" %}
-
-{% block title %}Novo Plano de Tratamento - {{ paciente.nome }}{% endblock %}
-
+{% block title %}
+    Novo Plano de Tratamento - {{ paciente.nome }}
+{% endblock title %}
 {% block content %}
-<div class="mobile-form-container">
-    <div class="mobile-form-header">
-        <h2>Novo Plano de Tratamento</h2>
-        <a href="{{ url_for('pacientes.listar_planos', paciente_id=paciente.id) }}" class="btn-back">
-            <i class="fas fa-arrow-left"></i>
-            Voltar
-        </a>
-    </div>
-
-    <div class="patient-info">
-        <h3><i class="fas fa-user"></i> {{ paciente.nome }}</h3>
-        <p>Criando novo plano de tratamento</p>
-    </div>
-
-    <form method="POST" class="mobile-form">
-        {{ form.hidden_tag() if form.hidden_tag }}
-
-        <div class="form-section">
-            <h3><i class="fas fa-clipboard-list"></i> Informações do Plano</h3>
-
-            <div class="form-group">
-                {{ form.descricao.label(class="form-label") }}
-                {{ form.descricao(class="form-control", rows="4") }}
-                {% if form.descricao.errors %}
-                <div class="field-error">{{ form.descricao.errors[0] }}</div>
-                {% endif %}
-            </div>
-
-            <div class="form-group">
-                {{ form.status.label(class="form-label") }}
-                {{ form.status(class="form-control") }}
-                {% if form.status.errors %}
-                <div class="field-error">{{ form.status.errors[0] }}</div>
-                {% endif %}
-            </div>
-
-            <div class="form-group">
-                {{ form.observacoes.label(class="form-label") }}
-                {{ form.observacoes(class="form-control", rows="3") }}
-                {% if form.observacoes.errors %}
-                <div class="field-error">{{ form.observacoes.errors[0] }}</div>
-                {% endif %}
-            </div>
-        </div>
-
-        <div class="form-actions">
-            <button type="submit" class="btn-primary">
-                <i class="fas fa-save"></i>
-                Criar Plano
-            </button>
-
-            <a href="{{ url_for('pacientes.listar_planos', paciente_id=paciente.id) }}" class="btn-secondary">
-                <i class="fas fa-times"></i>
-                Cancelar
+    <div class="mobile-form-container">
+        <div class="mobile-form-header">
+            <h2>Novo Plano de Tratamento</h2>
+            <a href="{{ url_for('pacientes.listar_planos', paciente_id=paciente.id) }}"
+               class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+                Voltar
             </a>
         </div>
-    </form>
-</div>
-
-<style>
+        <div class="patient-info">
+            <h3>
+                <i class="fas fa-user"></i> {{ paciente.nome }}
+            </h3>
+            <p>Criando novo plano de tratamento</p>
+        </div>
+        <form method="post" class="mobile-form">
+            {{ form.hidden_tag() if form.hidden_tag }}
+            <div class="form-section">
+                <h3>
+                    <i class="fas fa-clipboard-list"></i> Informações do Plano
+                </h3>
+                <div class="form-group">
+                    {{ form.descricao.label(class="form-label") }}
+                    {{ form.descricao(class="form-control", rows="4") }}
+                    {% if form.descricao.errors %}<div class="field-error">{{ form.descricao.errors[0] }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.status.label(class="form-label") }}
+                    {{ form.status(class="form-control") }}
+                    {% if form.status.errors %}<div class="field-error">{{ form.status.errors[0] }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.observacoes.label(class="form-label") }}
+                    {{ form.observacoes(class="form-control", rows="3") }}
+                    {% if form.observacoes.errors %}<div class="field-error">{{ form.observacoes.errors[0] }}</div>{% endif %}
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-save"></i>
+                    Criar Plano
+                </button>
+                <a href="{{ url_for('pacientes.listar_planos', paciente_id=paciente.id) }}"
+                   class="btn-secondary">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+    <style>
     .mobile-form-container {
         padding: 1rem;
         max-width: 100%;
@@ -251,5 +242,5 @@
             text-align: center;
         }
     }
-</style>
-{% endblock %}
+    </style>
+{% endblock content %}
