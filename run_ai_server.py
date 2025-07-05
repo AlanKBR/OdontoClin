@@ -37,9 +37,7 @@ def start_server():
     settings = load_settings()
     vllm_config = settings.get("providers", {}).get("vllm", {})
 
-    model_name = settings.get(
-        "model_name", "BioMistral/BioMistral-7B-AWQ-QGS128-W4-GEMV"
-    )
+    model_name = settings.get("model_name", "BioMistral/BioMistral-7B-AWQ-QGS128-W4-GEMV")
 
     print(f"🚀 Starting vLLM server with model: {model_name}")
 
@@ -48,9 +46,7 @@ def start_server():
 
     # Add optional parameters from config
     if vllm_config.get("gpu_memory_utilization"):
-        cmd.extend(
-            ["--gpu-memory-utilization", str(vllm_config["gpu_memory_utilization"])]
-        )
+        cmd.extend(["--gpu-memory-utilization", str(vllm_config["gpu_memory_utilization"])])
 
     if vllm_config.get("max_model_len"):
         cmd.extend(["--max-model-len", str(vllm_config["max_model_len"])])
@@ -130,17 +126,13 @@ def server_status():
 def test_inference():
     """Test model inference"""
     if not is_server_running():
-        print(
-            "❌ vLLM server is not running. Start it first with: python run_ai_server.py start"
-        )
+        print("❌ vLLM server is not running. Start it first with: python run_ai_server.py start")
         return
 
     print("🧪 Testing inference...")
 
     settings = load_settings()
-    model_name = settings.get(
-        "model_name", "BioMistral/BioMistral-7B-AWQ-QGS128-W4-GEMV"
-    )
+    model_name = settings.get("model_name", "BioMistral/BioMistral-7B-AWQ-QGS128-W4-GEMV")
 
     payload = {
         "model": model_name,

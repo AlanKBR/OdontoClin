@@ -36,23 +36,19 @@ def detect_gpu():
             )
 
             if result.returncode == 0:
-                lines = [
-                    line.strip() for line in result.stdout.split("\n") if line.strip()
-                ]
+                lines = [line.strip() for line in result.stdout.split("\n") if line.strip()]
 
                 for line in lines:
                     line_lower = line.lower()
                     if any(
-                        keyword in line_lower
-                        for keyword in ["amd", "radeon", "rx 5700", "rx5700"]
+                        keyword in line_lower for keyword in ["amd", "radeon", "rx 5700", "rx5700"]
                     ):
                         gpu_info["has_amd"] = True
                         gpu_info["recommended_backend"] = "rocm"
                         gpu_info["amd_devices"].append(line.strip())
 
                     if any(
-                        keyword in line_lower
-                        for keyword in ["nvidia", "geforce", "gtx", "rtx"]
+                        keyword in line_lower for keyword in ["nvidia", "geforce", "gtx", "rtx"]
                     ):
                         gpu_info["has_nvidia"] = True
                         if not gpu_info["has_amd"]:  # NVIDIA takes priority if both
@@ -80,12 +76,8 @@ def check_rocm_compatibility():
             # Try to access torch.version and check for hip
             version_module = getattr(torch, "version", None)
             if version_module:
-                rocm_available = (
-                    hasattr(version_module, "hip") and version_module.hip is not None
-                )
-                hip_version = (
-                    getattr(version_module, "hip", None) if rocm_available else None
-                )
+                rocm_available = hasattr(version_module, "hip") and version_module.hip is not None
+                hip_version = getattr(version_module, "hip", None) if rocm_available else None
             else:
                 rocm_available = False
                 hip_version = None
@@ -251,9 +243,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="AMD GPU Setup")
-    parser.add_argument(
-        "--install", action="store_true", help="Install recommended PyTorch"
-    )
+    parser.add_argument("--install", action="store_true", help="Install recommended PyTorch")
     parser.add_argument(
         "--force",
         action="store_true",
@@ -272,8 +262,7 @@ if __name__ == "__main__":
             if args.force:
                 # Uninstall first
                 subprocess.run(
-                    [sys.executable, "-m", "pip", "uninstall", "-y"]
-                    + recommendations["packages"]
+                    [sys.executable, "-m", "pip", "uninstall", "-y"] + recommendations["packages"]
                 )
 
             # Install

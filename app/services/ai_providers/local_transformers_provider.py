@@ -83,7 +83,13 @@ class LocalTransformersProvider(BaseAIProvider):
 
     def initialize(self) -> bool:
         """Initialize transformers provider"""
-        if not TRANSFORMERS_AVAILABLE or torch is None or AutoTokenizer is None or AutoModelForCausalLM is None or pipeline is None:
+        if (
+            not TRANSFORMERS_AVAILABLE
+            or torch is None
+            or AutoTokenizer is None
+            or AutoModelForCausalLM is None
+            or pipeline is None
+        ):
             logger.error("Transformers dependencies not available")
             return False
 
@@ -229,7 +235,11 @@ class LocalTransformersProvider(BaseAIProvider):
                 # Check if we have all required components for fallback
                 if torch is None or self.model is None or self.tokenizer is None:
                     logger.error("Required components not available for fallback generation")
-                    return {"success": False, "error": "Model components not available", "response": ""}
+                    return {
+                        "success": False,
+                        "error": "Model components not available",
+                        "response": "",
+                    }
 
                 # Fallback to basic generation
                 inputs = self.tokenizer.encode(

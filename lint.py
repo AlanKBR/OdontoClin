@@ -311,9 +311,7 @@ def configure_vscode_jinja_settings(project_root: Path) -> bool:
                 else:
                     print(f"ℹ️ {settings_file} is empty. Will create new settings.")
             except json.JSONDecodeError:
-                print(
-                    f"⚠️ {settings_file} contains invalid JSON. It will be overwritten."
-                )
+                print(f"⚠️ {settings_file} contains invalid JSON. It will be overwritten.")
                 current_settings = {}  # Treat as empty if corrupt
             except Exception:
                 current_settings = {}
@@ -339,9 +337,7 @@ def configure_vscode_jinja_settings(project_root: Path) -> bool:
                 json.dump(current_settings, f, indent=4)
             print(f"✅ Jinja2 Enhance settings configured in {settings_file}")
         else:
-            print(
-                f"✅ Jinja2 Enhance settings already correctly configured in {settings_file}."
-            )
+            print(f"✅ Jinja2 Enhance settings already correctly configured in {settings_file}.")
         return True
 
     except Exception:
@@ -364,9 +360,7 @@ def check_and_install_vscode_extensions():
     Ensure all required VS Code extensions for linting/formatting are installed.
     """
     if not check_tool_installed("code"):
-        print(
-            "[WARN] VS Code CLI ('code') not found in PATH. Skipping extension checks."
-        )
+        print("[WARN] VS Code CLI ('code') not found in PATH. Skipping extension checks.")
         return
     for ext in REQUIRED_VSCODE_EXTENSIONS:
         if not check_vscode_extension_installed(ext):
@@ -395,15 +389,11 @@ def main() -> int:
 
     # Find and filter files
     python_files = find_python_files(project_root)
-    python_files = [
-        f for f in python_files if not any(excl in f for excl in exclude_dirs)
-    ]
+    python_files = [f for f in python_files if not any(excl in f for excl in exclude_dirs)]
     js_files = find_javascript_files(project_root)
     js_files = [f for f in js_files if not any(excl in f for excl in exclude_dirs)]
     jinja2_files = find_jinja2_files(project_root)
-    jinja2_files = [
-        f for f in jinja2_files if not any(excl in f for excl in exclude_dirs)
-    ]
+    jinja2_files = [f for f in jinja2_files if not any(excl in f for excl in exclude_dirs)]
 
     # Initialize results
     results = {}
@@ -420,9 +410,7 @@ def main() -> int:
         print("----------------------------")
 
         print("[BLK] Black (formatting):", end=" ")
-        results["black"] = run_command(
-            ["black", "--line-length", "100", *python_files], verbose
-        )
+        results["black"] = run_command(["black", "--line-length", "100", *python_files], verbose)
         print("[OK] Done" if results["black"] else "[ERR] Failed")
 
         print("[ISO] isort (import sorting):", end=" ")
@@ -432,15 +420,11 @@ def main() -> int:
 
         print("[RUF] Ruff (linting):", end=" ")
         # Ruff can replace Flake8 for linting and also offers formatting
-        results["ruff"] = run_command(
-            ["ruff", "check", ".", "--fix", *python_files], verbose
-        )
+        results["ruff"] = run_command(["ruff", "check", ".", "--fix", *python_files], verbose)
         print("[OK] Done" if results["ruff"] else "[ERR] Failed")
 
         print("[FLK] Flake8 (linting):", end=" ")
-        results["flake8"] = run_command(
-            ["flake8", "--max-line-length=100", *python_files], verbose
-        )
+        results["flake8"] = run_command(["flake8", "--max-line-length=100", *python_files], verbose)
         print("[OK] Done" if results["flake8"] else "[ERR] Failed")
     else:
         results.update({"black": True, "isort": True, "ruff": True, "flake8": True})
@@ -473,9 +457,7 @@ def main() -> int:
                     print("[OK] Done" if results["eslint"] else "[ERR] Failed")
             else:
                 print("[ESL] ESLint:", end=" ")
-                results["eslint"] = run_command(
-                    ["npm", "run", "lint:js", "--", "--quiet"], verbose
-                )
+                results["eslint"] = run_command(["npm", "run", "lint:js", "--", "--quiet"], verbose)
                 print("[OK] Done" if results["eslint"] else "[ERR] Failed")
     else:
         results["eslint"] = True  # No JS files, so consider it successful
@@ -523,10 +505,7 @@ def main() -> int:
                         # Handle interactive environment
                         try:
                             # Only show details if requested
-                            if (
-                                input("Show detailed issues? (y/n): ").strip().lower()
-                                == "y"
-                            ):
+                            if input("Show detailed issues? (y/n): ").strip().lower() == "y":
                                 result = subprocess.run(
                                     djlint_cmd_args,
                                     capture_output=True,
@@ -542,17 +521,13 @@ def main() -> int:
 
                             # Allow applying fixes anyway
                             if (
-                                input("Apply formatting changes anyway? (y/n): ")
-                                .strip()
-                                .lower()
+                                input("Apply formatting changes anyway? (y/n): ").strip().lower()
                                 == "y"
                             ):
                                 print("Applying formatting changes...")
                                 forced_reformat = run_command(reformat_args, verbose)
                                 if forced_reformat:
-                                    print(
-                                        "[OK] Formatting applied (with remaining issues)"
-                                    )
+                                    print("[OK] Formatting applied (with remaining issues)")
                                     results["djlint"] = True  # Consider it a success
                                 else:
                                     print("❌ Failed to apply formatting")
@@ -588,9 +563,7 @@ def main() -> int:
         print("[JINJA2] Jinja2 VS Code Extension:", end=" ")
         code_cli_available = check_tool_installed("code")
         if code_cli_available:
-            has_extension = check_vscode_extension_installed(
-                JINJA2_ENHANCE_EXTENSION_ID
-            )
+            has_extension = check_vscode_extension_installed(JINJA2_ENHANCE_EXTENSION_ID)
             if not has_extension:
                 print("Installing...")
                 install_vscode_extension(JINJA2_ENHANCE_EXTENSION_ID)
