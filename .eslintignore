@@ -1,8 +1,0 @@
-# Third-party libraries
-app/static/js/lib/
-app/static/js/vendor/
-
-# Build output directories
-dist/
-build/
-node_modules/
