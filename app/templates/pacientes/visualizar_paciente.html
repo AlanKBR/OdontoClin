@@ -76,35 +76,35 @@
         <!-- Abas do paciente -->
         <ul class="nav nav-tabs mb-3" id="myTab" role="tablist">
             <li class="nav-item" role="presentation">
-                <a class="nav-link {% if aba_ativa == 'ficha' %}active{% endif %}"
+                <a class="nav-link {% if aba_ativa == "ficha" %}active{% endif %}"
                    href="{{ url_for('pacientes.editar_ficha', paciente_id=paciente.id) }}"
                    role="tab">
                     <i class="bi bi-file-earmark-text"></i> Ficha
                 </a>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link {% if aba_ativa == 'anamnese' %}active{% endif %}"
+                <a class="nav-link {% if aba_ativa == "anamnese" %}active{% endif %}"
                    href="{{ url_for('pacientes.editar_anamnese', paciente_id=paciente.id) }}"
                    role="tab">
                     <i class="bi bi-clipboard2-pulse"></i> Anamnese
                 </a>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link {% if aba_ativa == 'plano' %}active{% endif %}"
+                <a class="nav-link {% if aba_ativa == "plano" %}active{% endif %}"
                    href="{{ url_for('pacientes.listar_planos', paciente_id=paciente.id) }}"
                    role="tab">
                     <i class="bi bi-card-checklist"></i> Plano de Tratamento
                 </a>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link {% if aba_ativa == 'historico' %}active{% endif %}"
+                <a class="nav-link {% if aba_ativa == "historico" %}active{% endif %}"
                    href="{{ url_for('pacientes.listar_historico', paciente_id=paciente.id) }}"
                    role="tab">
                     <i class="bi bi-clock-history"></i> Histórico
                 </a>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link {% if aba_ativa == 'financeiro' %}active{% endif %}"
+                <a class="nav-link {% if aba_ativa == "financeiro" %}active{% endif %}"
                    href="{{ url_for('pacientes.listar_financeiro', paciente_id=paciente.id) }}"
                    role="tab">
                     <i class="bi bi-currency-dollar"></i> Financeiro

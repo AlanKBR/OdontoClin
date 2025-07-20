@@ -65,6 +65,8 @@ class VLLMProvider(BaseAIProvider):
                 "success": False,
                 "error": "vLLM server not available",
                 "response": "",
+                "provider": "vLLM",
+                "model": self.model_name,
             }
 
         try:
@@ -103,6 +105,8 @@ class VLLMProvider(BaseAIProvider):
                     "success": False,
                     "error": f"Server error: {response.status_code}",
                     "response": "",
+                    "provider": "vLLM",
+                    "model": self.model_name,
                 }
 
         except requests.exceptions.RequestException as e:
@@ -111,10 +115,18 @@ class VLLMProvider(BaseAIProvider):
                 "success": False,
                 "error": f"Connection error: {str(e)}",
                 "response": "",
+                "provider": "vLLM",
+                "model": self.model_name,
             }
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
-            return {"success": False, "error": str(e), "response": ""}
+            return {
+                "success": False,
+                "error": str(e),
+                "response": "",
+                "provider": "vLLM",
+                "model": self.model_name,
+            }
 
     def _prepare_prompt(self, query: str, context: Optional[str] = None) -> str:
         """Prepare prompt for the AI model"""

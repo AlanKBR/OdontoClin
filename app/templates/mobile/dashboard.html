@@ -1,4 +1,4 @@
-{% extends 'mobile/base.html' %}
+{% extends "mobile/base.html" %}
 {% block title %}
     Dashboard - OdontoClinic
 {% endblock title %}
@@ -10,28 +10,28 @@
         <!-- Estatísticas Rápidas -->
         <div class="mobile-card card">
             <div class="card-body text-center">
-                <i class="bi bi-people text-primary" style="font-size: 2rem;"></i>
+                <i class="bi bi-people text-primary icon-2rem"></i>
                 <h3 class="card-title mt-2">{{ pacientes_count or 0 }}</h3>
                 <p class="card-text text-muted">Pacientes Cadastrados</p>
             </div>
         </div>
         <div class="mobile-card card">
             <div class="card-body text-center">
-                <i class="bi bi-calendar-event text-success" style="font-size: 2rem;"></i>
+                <i class="bi bi-calendar-event text-success icon-2rem"></i>
                 <h3 class="card-title mt-2">{{ agendamentos_hoje or 0 }}</h3>
                 <p class="card-text text-muted">Agendamentos Hoje</p>
             </div>
         </div>
         <div class="mobile-card card">
             <div class="card-body text-center">
-                <i class="bi bi-tools text-warning" style="font-size: 2rem;"></i>
+                <i class="bi bi-tools text-warning icon-2rem"></i>
                 <h3 class="card-title mt-2">{{ tratamentos_andamento or 0 }}</h3>
                 <p class="card-text text-muted">Tratamentos em Andamento</p>
             </div>
         </div>
         <div class="mobile-card card">
             <div class="card-body text-center">
-                <i class="bi bi-file-medical text-info" style="font-size: 2rem;"></i>
+                <i class="bi bi-file-medical text-info icon-2rem"></i>
                 <h3 class="card-title mt-2">{{ receitas_mes or 0 }}</h3>
                 <p class="card-text text-muted">Receitas Este Mês</p>
             </div>
@@ -82,7 +82,7 @@
                     </div>
                 {% else %}
                     <div class="text-center text-muted py-4">
-                        <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                        <i class="bi bi-inbox icon-2rem"></i>
                         <p class="mt-2 mb-0">Nenhuma atividade recente</p>
                     </div>
                 {% endif %}
@@ -108,7 +108,7 @@
                     </div>
                 {% else %}
                     <div class="text-center text-muted py-4">
-                        <i class="bi bi-calendar-x" style="font-size: 2rem;"></i>
+                        <i class="bi bi-calendar-x icon-2rem"></i>
                         <p class="mt-2 mb-0">Nenhum agendamento para hoje</p>
                     </div>
                 {% endif %}
@@ -116,6 +116,11 @@
         </div>
     </div>
 {% endblock content %}
+    <style>
+    .icon-2rem {
+        font-size: 2rem;
+    }
+    </style>
 {% block scripts %}
     <script nonce="{{ csp_nonce() }}">
     // Adicionar qualquer JavaScript específico para o dashboard mobile

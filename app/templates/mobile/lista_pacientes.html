@@ -1,4 +1,4 @@
-{% extends 'mobile/base.html' %}
+{% extends "mobile/base.html" %}
 {% block title %}
     Pacientes - OdontoClinic
 {% endblock title %}
@@ -185,7 +185,7 @@
         {% else %}
             <!-- Estado vazio -->
             <div class="text-center py-5">
-                <i class="bi bi-people" style="font-size: 4rem; color: #dee2e6;"></i>
+                <i class="bi bi-people icon-4rem text-muted-bg"></i>
                 <h5 class="mt-3 text-muted">Nenhum paciente encontrado</h5>
                 {% if request.args.get('busca') %}
                     <p class="text-muted">Tente uma busca diferente ou</p>
@@ -198,6 +198,14 @@
                         <i class="bi bi-plus me-2"></i>Novo Paciente
                     </a>
                 {% endif %}
+        <style>
+        .icon-4rem {
+            font-size: 4rem;
+        }
+        .text-muted-bg {
+            color: #dee2e6;
+        }
+        </style>
             </div>
         {% endif %}
     </div>

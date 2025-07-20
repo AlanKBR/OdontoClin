@@ -120,32 +120,57 @@ def detect_windows_gpu() -> Dict[str, Any]:
             for line in lines:
                 line_lower = line.lower()
 
+                # Clean up device name by removing large numbers (RAM amounts)
+                clean_name = clean_device_name(line)
+                if not clean_name:
+                    continue
+
                 # NVIDIA detection
                 if any(
                     keyword in line_lower for keyword in ["nvidia", "geforce", "quadro", "tesla"]
                 ):
                     gpu_info["nvidia"]["available"] = True
-                    gpu_info["nvidia"]["devices"].append(line)
+                    gpu_info["nvidia"]["devices"].append(clean_name)
                     gpu_info["recommended_backend"] = "cuda"
 
                 # AMD detection
                 elif any(keyword in line_lower for keyword in ["amd", "radeon", "rx"]):
                     gpu_info["amd"]["available"] = True
-                    gpu_info["amd"]["devices"].append(line)
-                    if gpu_info["recommended_backend"] == "cpu":  # Only if no NVIDIA found
-                        gpu_info["recommended_backend"] = "rocm"
+                    gpu_info["amd"]["devices"].append(clean_name)
+                    # Não forçar ROCm automaticamente - deixar CPU como padrão
+                    # if gpu_info["recommended_backend"] == "cpu":  # Only if no NVIDIA found
+                    #     gpu_info["recommended_backend"] = "rocm"
 
                 # Integrated GPU detection
                 elif any(
                     keyword in line_lower for keyword in ["intel", "integrated", "uhd", "iris"]
                 ):
                     gpu_info["integrated"]["available"] = True
-                    gpu_info["integrated"]["devices"].append(line)
+                    gpu_info["integrated"]["devices"].append(clean_name)
 
     except Exception as e:
         logger.error(f"Error detecting Windows GPU: {e}")
 
     return gpu_info
+
+
+def clean_device_name(device_name: str) -> str:
+    """Clean up device name by removing unnecessary information"""
+    if not device_name or not isinstance(device_name, str):
+        return ""
+
+    # Remove large numbers at the end (likely RAM amounts)
+    cleaned = device_name.strip()
+
+    # Remove numbers with 8+ digits (RAM amounts like 4293918720)
+    import re
+
+    cleaned = re.sub(r"\s+\d{8,}$", "", cleaned)
+
+    # Remove excessive whitespace
+    cleaned = " ".join(cleaned.split())
+
+    return cleaned
 
 
 def detect_linux_gpu() -> Dict[str, Any]:
@@ -165,7 +190,13 @@ def detect_linux_gpu() -> Dict[str, Any]:
             )
             if result.returncode == 0:
                 gpu_info["nvidia"]["available"] = True
-                gpu_info["nvidia"]["devices"] = result.stdout.strip().split("\n")
+                # Clean up nvidia-smi output
+                devices = []
+                for line in result.stdout.strip().split("\n"):
+                    clean_name = clean_device_name(line)
+                    if clean_name:
+                        devices.append(clean_name)
+                gpu_info["nvidia"]["devices"] = devices
                 gpu_info["recommended_backend"] = "cuda"
         except (FileNotFoundError, subprocess.TimeoutExpired):
             pass
@@ -176,16 +207,21 @@ def detect_linux_gpu() -> Dict[str, Any]:
             if result.returncode == 0:
                 for line in result.stdout.split("\n"):
                     line_lower = line.lower()
+                    clean_name = clean_device_name(line)
+                    if not clean_name:
+                        continue
+
                     if "amd" in line_lower or "radeon" in line_lower:
                         gpu_info["amd"]["available"] = True
-                        gpu_info["amd"]["devices"].append(line)
-                        if gpu_info["recommended_backend"] == "cpu":
-                            gpu_info["recommended_backend"] = "rocm"
+                        gpu_info["amd"]["devices"].append(clean_name)
+                        # Não forçar ROCm automaticamente - deixar CPU como padrão
+                        # if gpu_info["recommended_backend"] == "cpu":
+                        #     gpu_info["recommended_backend"] = "rocm"
                     elif "intel" in line_lower and (
                         "graphics" in line_lower or "uhd" in line_lower
                     ):
                         gpu_info["integrated"]["available"] = True
-                        gpu_info["integrated"]["devices"].append(line)
+                        gpu_info["integrated"]["devices"].append(clean_name)
         except (FileNotFoundError, subprocess.TimeoutExpired):
             pass
 
@@ -246,12 +282,10 @@ def generate_recommendations(capabilities: Dict[str, Any]) -> List[str]:
         recommendations.append("✅ NVIDIA GPU detectada - Use método CUDA para melhor performance")
     elif gpu_info.get("amd", {}).get("available"):
         recommendations.append(
-            "🟡 AMD GPU detectada - Use método ROCm (Linux/WSL2) ou DirectML (Windows)"
+            "🟡 AMD GPU detectada - Opcional: método ROCm (Linux/WSL2) para aceleração GPU"
         )
     elif gpu_info.get("integrated", {}).get("available"):
-        recommendations.append(
-            "🔵 GPU integrada detectada - Performance limitada, considere CPU ou cloud"
-        )
+        recommendations.append("🔵 GPU integrada detectada - Performance limitada, recomendado CPU")
     else:
         recommendations.append("💻 Nenhuma GPU dedicada - Use método CPU")
 

@@ -332,7 +332,11 @@ def gerar_pdf(documento_id):
         buffer.seek(0)
 
         # Nome do arquivo
-        nome_arquivo = f"{config_documento['titulo'].replace(' ', '_')}_{paciente.nome.replace(' ', '_')}_{documento.data_emissao.strftime('%Y%m%d')}.pdf"
+        nome_arquivo = (
+            f"{config_documento['titulo'].replace(' ', '_')}_"
+            f"{paciente.nome.replace(' ', '_')}_"
+            f"{documento.data_emissao.strftime('%Y%m%d')}.pdf"
+        )
 
         return send_file(
             buffer,

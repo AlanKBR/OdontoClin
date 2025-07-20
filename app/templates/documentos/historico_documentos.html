@@ -89,17 +89,17 @@
                                         <td>
                                             <!-- Badge colorido baseado no tipo -->
                                             {% set badge_class = "bg-primary" %}
-                                            {% if 'autorizacao' in documento.tipo_documento %}
+                                            {% if "autorizacao" in documento.tipo_documento %}
                                                 {% set badge_class = "bg-success" %}
-                                            {% elif 'interrupcao' in documento.tipo_documento %}
+                                            {% elif "interrupcao" in documento.tipo_documento %}
                                                 {% set badge_class = "bg-warning" %}
-                                            {% elif 'exames' in documento.tipo_documento %}
+                                            {% elif "exames" in documento.tipo_documento %}
                                                 {% set badge_class = "bg-info" %}
-                                            {% elif 'encaminhamento' in documento.tipo_documento %}
+                                            {% elif "encaminhamento" in documento.tipo_documento %}
                                                 {% set badge_class = "bg-secondary" %}
-                                            {% elif 'instrucoes' in documento.tipo_documento %}
+                                            {% elif "instrucoes" in documento.tipo_documento %}
                                                 {% set badge_class = "bg-primary" %}
-                                            {% elif 'contrato' in documento.tipo_documento %}
+                                            {% elif "contrato" in documento.tipo_documento %}
                                                 {% set badge_class = "bg-dark" %}
                                             {% endif %}
                                             <span class="badge document-badge {{ badge_class }}">{{ documento.titulo_documento }}</span>

@@ -231,10 +231,15 @@
             </span>
             <div class="d-flex align-items-center">
                 {% if current_user.is_authenticated %}
-                    <span class="text-white me-2" style="font-size: 0.8rem;">{{ current_user.nome }}</span>
+                    <span class="text-white me-2 small-user-name">{{ current_user.nome }}</span>
                 {% endif %}
             </div>
         </nav>
+        <style>
+        .small-user-name {
+            font-size: 0.8rem;
+        }
+        </style>
         <!-- Mobile Menu Overlay -->
         <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
         <!-- Mobile Menu -->

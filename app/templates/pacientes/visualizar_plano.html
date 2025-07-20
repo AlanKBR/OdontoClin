@@ -23,7 +23,7 @@
                         <div class="row mb-3">
                             <div class="col-md-3 fw-bold">Status:</div>
                             <div class="col-md-9">
-                                <span class="badge {% if plano.status == 'Pendente' %}bg-warning{% elif plano.status == 'Em andamento' %}bg-primary{% elif plano.status == 'Concluído' %}bg-success{% elif plano.status == 'Cancelado' %}bg-danger{% endif %}">
+                                <span class="badge {% if plano.status == "Pendente" %}bg-warning{% elif plano.status == "Em andamento" %}bg-primary{% elif plano.status == "Concluído" %}bg-success{% elif plano.status == "Cancelado" %}bg-danger{% endif %}">
                                     {{ plano.status }}
                                 </span>
                             </div>
@@ -77,7 +77,7 @@
                                                 <td>{{ proc.dente or '-' }}</td>
                                                 <td>R$ {{ "%.2f"|format(proc.valor) }}</td>
                                                 <td>
-                                                    <span class="badge {% if proc.status == 'Pendente' %}bg-warning{% elif proc.status == 'Realizado' %}bg-success{% elif proc.status == 'Cancelado' %}bg-danger{% endif %}">
+                                                    <span class="badge {% if proc.status == "Pendente" %}bg-warning{% elif proc.status == "Realizado" %}bg-success{% elif proc.status == "Cancelado" %}bg-danger{% endif %}">
                                                         {{ proc.status }}
                                                     </span>
                                                 </td>
@@ -350,7 +350,7 @@
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}
 {% block scripts %}
     {{ super() }}
     <script src="{{ url_for('static', filename='js/procedimentos.js') }}"></script>

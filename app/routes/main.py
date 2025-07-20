@@ -129,3 +129,10 @@ def upload_logo() -> ResponseReturnValue:
 def uploaded_logo(filename):
     upload_folder = os.path.join(current_app.root_path, "static", "uploads")
     return send_from_directory(upload_folder, filename)
+
+
+@main.route("/load-ai")
+@debug_login_optional
+def load_ai():
+    """Redirect to AI Assistant (which will handle initialization)"""
+    return redirect(url_for("ai_assistant.index"))

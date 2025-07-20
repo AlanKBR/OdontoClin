@@ -188,35 +188,26 @@
         </div>
     </div>
     <!-- Template para impressão -->
-    <div id="template-impressao" style="display: none;">
-        <div style="font-family: 'Times New Roman', serif;
-                    max-width: 210mm;
-                    margin: 0 auto;
-                    padding: 20mm;
-                    background: white;
-                    color: #333">
+    <div id="template-impressao" class="d-none template-impressao">
+        <div class="template-main">
             <!-- Cabeçalho da clínica -->
-            <div style="border-bottom: 2px solid #2c5aa0;
-                        padding-bottom: 15px;
-                        margin-bottom: 25px">
-                <div style="display: flex;
-                            align-items: center;
-                            justify-content: space-between">
-                    <div style="flex: 1;">
-                        <h1 style="color: #2c5aa0; margin: 0; font-size: 28px; font-weight: bold">
+            <div class="template-header-bar">
+                <div class="template-header-flex">
+                    <div class="template-header">
+                        <h1 class="template-header-title">
                             {{ clinica_global.nome if clinica_global else 'OdontoClinic' }}
                         </h1>
-                        <p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">Clínica Odontológica Especializada</p>
-                        <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                        <p class="template-header-subtitle">Clínica Odontológica Especializada</p>
+                        <div class="template-header-info">
                             {% if clinica_global and clinica_global.endereco %}
-                                <p style="margin: 2px 0;">
+                                <p class="template-header-info-p">
                                     📍 {{ clinica_global.endereco }}
                                     {% if clinica_global.cep %}- CEP {{ clinica_global.cep }}{% endif %}
                                 </p>
                             {% else %}
-                                <p style="margin: 2px 0;">📍 Endereço da Clínica - CEP 00000-000</p>
+                                <p class="template-header-info-p">📍 Endereço da Clínica - CEP 00000-000</p>
                             {% endif %}
-                            <p style="margin: 2px 0;">
+                            <p class="template-header-info-p">
                                 {% if clinica_global and (clinica_global.telefone or clinica_global.celular) %}
                                     {% if clinica_global.telefone %}📞 {{ clinica_global.telefone }}{% endif %}
                                     {% if clinica_global.telefone and clinica_global.celular %}|{% endif %}
@@ -226,140 +217,293 @@
                                 {% endif %}
                             </p>
                             {% if clinica_global and clinica_global.email %}
-                                <p style="margin: 2px 0;">✉️ {{ clinica_global.email }}</p>
+                                <p class="template-header-info-p">✉️ {{ clinica_global.email }}</p>
                             {% else %}
-                                <p style="margin: 2px 0;">✉️ contato@odontoclinic.com.br</p>
+                                <p class="template-header-info-p">✉️ contato@odontoclinic.com.br</p>
                             {% endif %}
                         </div>
                     </div>
-                    <div style="text-align: center; margin-left: 20px;">
+                    <div class="template-logo">
                         <!-- Logo da clínica -->
-                        <div style="width: 80px;
-                                    height: 80px;
-                                    border: 2px solid #2c5aa0;
-                                    border-radius: 50%;
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    overflow: hidden">
+                        <div class="logo-circle">
                             <img id="print-logo"
                                  src="{{ url_for('main.uploaded_logo', filename='clinic_logo.png') }}"
                                  alt="Logo da Clínica"
-                                 width="80"
-                                 height="80"
-                                 style="width: 100%;
-                                        height: 100%;
-                                        object-fit: cover;
-                                        border-radius: 50%"
-                                 onerror="this.style.display='none'; this.parentNode.innerHTML='<span style=\'color: #2c5aa0; font-weight: bold; font-size: 14px;\'>LOGO</span>'">
+                                 width="80" height="80"
+                                 class="logo-img"
+                                 onerror="this.style.display='none'; this.parentNode.innerHTML='LOGO'">
                             </div>
                         </div>
                     </div>
                 </div>
                 <!-- Título do documento -->
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <h2 style="color: #2c5aa0;
-                               margin: 0;
-                               font-size: 24px;
-                               letter-spacing: 2px;
-                               border: 2px solid #2c5aa0;
-                               padding: 10px;
-                               display: inline-block">RECEITUÁRIO ODONTOLÓGICO</h2>
+                <div class="template-title-block">
+                    <h2 class="template-title">RECEITUÁRIO ODONTOLÓGICO</h2>
                 </div>
                 <!-- Informações do paciente e data -->
-                <div style="background: #f8f9fa;
-                            padding: 15px;
-                            border-left: 4px solid #2c5aa0;
-                            margin-bottom: 25px">
-                    <div style="display: flex;
-                                justify-content: space-between;
-                                align-items: center">
-                        <div style="flex: 1;">
-                            <p style="margin: 0; font-size: 16px;">
-                                <strong>Paciente:</strong> <span id="print-paciente-nome" style="color: #2c5aa0; font-weight: bold;"></span>
+                <div class="template-patient-info">
+                    <div class="template-patient-flex">
+                        <div class="template-patient-flex1">
+                            <p class="template-patient-main">
+                                <strong>Paciente:</strong> <span id="print-paciente-nome" class="template-patient-name"></span>
                             </p>
-                            <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">
+                            <p class="template-patient-sub">
                                 <strong>Data de Nascimento:</strong> <span id="print-paciente-nascimento"></span>
                             </p>
-                            <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">
+                            <p class="template-patient-sub">
                                 <strong>CPF:</strong> <span id="print-paciente-cpf"></span>
                             </p>
                         </div>
-                        <div style="text-align: right; margin-left: 20px;">
-                            <p style="margin: 0; font-size: 16px;">
-                                <strong>Data:</strong> <span id="print-data" style="color: #2c5aa0; font-weight: bold;"></span>
+                        <div class="template-patient-right">
+                            <p class="template-patient-date">
+                                <strong>Data:</strong> <span id="print-data" class="template-patient-date-val"></span>
                             </p>
-                            <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">
+                            <p class="template-patient-date-sub">
                                 <strong>Receita Nº:</strong> <span id="print-numero-receita"></span>
                             </p>
                         </div>
                     </div>
                 </div>
                 <!-- Prescrição médica -->
-                <div style="border: 1px solid #ddd;
-                            border-radius: 5px;
-                            padding: 20px;
-                            margin-bottom: 30px;
-                            min-height: 200px;
-                            background: white">
-                    <h3 style="margin: 0 0 15px 0;
-                               color: #2c5aa0;
-                               font-size: 18px;
-                               border-bottom: 1px solid #eee;
-                               padding-bottom: 10px">PRESCRIÇÃO</h3>
-                    <div id="print-prescricao"
-                         style="font-size: 14px;
-                                line-height: 1.8;
-                                color: #333;
-                                margin-left: 20px"></div>
+                <div class="template-prescription">
+                    <h3 class="template-prescription-title">PRESCRIÇÃO</h3>
+                    <div id="print-prescricao" class="template-prescription-content"></div>
                 </div>
                 <!-- Informações do dentista -->
-                <div style="margin-top: 40px;
-                            border-top: 1px solid #ddd;
-                            padding-top: 20px">
-                    <div style="display: flex;
-                                justify-content: space-between;
-                                align-items: end">
-                        <div style="flex: 1;">
-                            <div style="margin-bottom: 20px;">
+                <div class="template-dentist-info">
+                    <div class="template-dentist-flex">
+                        <div class="template-dentist-flex1">
+                            <div class="template-dentist-flex1-inner">
                                 <!-- Informações removidas: contagem de medicamentos e data de emissão -->
                             </div>
                         </div>
-                        <div style="text-align: center; margin-left: 40px;">
-                            <div style="border-top: 2px solid #000; width: 250px; margin-bottom: 10px"></div>
-                            <div style="text-align: center;">
-                                <p style="margin: 0;
-                                          font-size: 16px;
-                                          font-weight: bold;
-                                          color: #2c5aa0"
-                                   id="print-dentista-nome">{{ current_user.nome_completo }}</p>
-                                <p style="margin: 3px 0; font-size: 14px; color: #666;">Cirurgião-Dentista</p>
-                                <p style="margin: 3px 0; font-size: 14px; font-weight: bold;">
+                        <div class="template-dentist-right">
+                            <div class="template-dentist-sign"></div>
+                            <div class="template-dentist-sign-block">
+                                <p class="template-dentist-name" id="print-dentista-nome">{{ current_user.nome_completo }}</p>
+                                <p class="template-dentist-title">Cirurgião-Dentista</p>
+                                <p class="template-dentist-cro">
                                     CRO-<span id="print-dentista-cro">{{ current_user.cro }}</span>
                                 </p>
-                                <p style="margin: 3px 0;
-                                          font-size: 12px;
-                                          color: #666"
-                                   id="print-dentista-especialidade"></p>
+                                <p class="template-dentist-specialty" id="print-dentista-especialidade"></p>
                             </div>
                         </div>
                     </div>
                 </div>
                 <!-- Rodapé com informações importantes -->
-                <div style="margin-top: 30px;
-                            padding-top: 15px;
-                            border-top: 1px solid #eee;
-                            font-size: 10px;
-                            color: #666;
-                            text-align: center">
-                    <p style="margin: 0;">
+                <div class="template-footer">
+                    <p class="template-footer-p">
                         ⚠️ <strong>IMPORTANTE:</strong> Esta receita é válida em todo território nacional por 30 dias.
                     </p>
-                    <p style="margin: 5px 0 0 0;">Siga rigorosamente as orientações médicas. Em caso de dúvidas, consulte seu dentista.</p>
-                    <p style="margin: 5px 0 0 0;">Este documento foi gerado eletronicamente e possui validade legal.</p>
+                    <p class="template-footer-p">Siga rigorosamente as orientações médicas. Em caso de dúvidas, consulte seu dentista.</p>
+                    <p class="template-footer-p">Este documento foi gerado eletronicamente e possui validade legal.</p>
                 </div>
             </div>
         </div>
+        <style>
+        .template-header-bar {
+            border-bottom: 2px solid #2c5aa0;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .template-header-flex {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .template-header-title {
+            color: #2c5aa0;
+            margin: 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .template-header-subtitle {
+            margin: 5px 0 0 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .template-header-info {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+        .template-header-info-p {
+            margin: 2px 0;
+        }
+        .template-title-block {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .template-title {
+            color: #2c5aa0;
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 2px;
+            border: 2px solid #2c5aa0;
+            padding: 10px;
+            display: inline-block;
+        }
+        .template-patient-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #2c5aa0;
+            margin-bottom: 25px;
+        }
+        .template-patient-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .template-patient-flex1 {
+            flex: 1;
+        }
+        .template-patient-main {
+            margin: 0;
+            font-size: 16px;
+        }
+        .template-patient-name {
+            color: #2c5aa0;
+            font-weight: bold;
+        }
+        .template-patient-sub {
+            margin: 5px 0 0 0;
+            font-size: 14px;
+            color: #666;
+        }
+        .template-patient-right {
+            text-align: right;
+            margin-left: 20px;
+        }
+        .template-patient-date {
+            margin: 0;
+            font-size: 16px;
+        }
+        .template-patient-date-val {
+            color: #2c5aa0;
+            font-weight: bold;
+        }
+        .template-patient-date-sub {
+            margin: 5px 0 0 0;
+            font-size: 14px;
+            color: #666;
+        }
+        .template-prescription {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 30px;
+            min-height: 200px;
+            background: white;
+        }
+        .template-prescription-title {
+            margin: 0 0 15px 0;
+            color: #2c5aa0;
+            font-size: 18px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .template-prescription-content {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #333;
+            margin-left: 20px;
+        }
+        .template-dentist-info {
+            margin-top: 40px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        .template-dentist-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+        }
+        .template-dentist-flex1 {
+            flex: 1;
+        }
+        .template-dentist-flex1-inner {
+            margin-bottom: 20px;
+        }
+        .template-dentist-right {
+            text-align: center;
+            margin-left: 40px;
+        }
+        .template-dentist-sign {
+            border-top: 2px solid #000;
+            width: 250px;
+            margin-bottom: 10px;
+        }
+        .template-dentist-sign-block {
+            text-align: center;
+        }
+        .template-dentist-name {
+            margin: 0;
+            font-size: 16px;
+            font-weight: bold;
+            color: #2c5aa0;
+        }
+        .template-dentist-title {
+            margin: 3px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        .template-dentist-cro {
+            margin: 3px 0;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .template-dentist-specialty {
+            margin: 3px 0;
+            font-size: 12px;
+            color: #666;
+        }
+        .template-footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            font-size: 10px;
+            color: #666;
+            text-align: center;
+        }
+        .template-footer-p {
+            margin: 0;
+        }
+        </style>
+        <style>
+        .d-none { display: none; }
+        .template-impressao {}
+        .template-main {
+            font-family: 'Times New Roman', serif;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20mm;
+            background: white;
+            color: #333;
+        }
+        .template-header { flex: 1; }
+        .template-logo { text-align: center; margin-left: 20px; }
+        .logo-circle {
+            width: 80px;
+            height: 80px;
+            border: 2px solid #2c5aa0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .logo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+        .logo-fallback {
+            color: #2c5aa0;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        </style>
     {% endblock content %}
     {% block extra_js %}
         <script nonce="{{ csp_nonce() }}">

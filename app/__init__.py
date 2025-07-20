@@ -7,6 +7,9 @@ from flask import Flask, render_template
 from markupsafe import Markup
 
 from app.models.user import User
+
+# Import AI Assistant blueprint but with lazy route handling
+from app.routes.ai_assistant import ai_assistant_bp
 from app.routes.atestados import atestados_bp  # Adicionando o novo blueprint de atestados
 
 # Import blueprints and models at the top level
@@ -18,15 +21,6 @@ from app.routes.pacientes import pacientes
 from app.routes.receitas import receitas  # Adicionando o novo blueprint de receitas
 from app.routes.tratamentos import tratamentos
 from app.routes.users import users
-
-# Conditional import for AI Assistant
-try:
-    from app.routes.ai_assistant import ai_assistant_bp
-
-    AI_ASSISTANT_AVAILABLE = True
-except ImportError:
-    AI_ASSISTANT_AVAILABLE = False
-    ai_assistant_bp = None
 
 # Import extensions from the new extensions.py file
 from .extensions import db, login_manager, mobility
@@ -112,10 +106,9 @@ def create_app() -> Flask:
     app.register_blueprint(
         documentos_bp, url_prefix="/documentos"
     )  # Registro do blueprint de documentos
-    if AI_ASSISTANT_AVAILABLE and ai_assistant_bp is not None:
-        app.register_blueprint(
-            ai_assistant_bp
-        )  # Registro do blueprint de IA (já tem url_prefix='/ai')
+    app.register_blueprint(
+        ai_assistant_bp, url_prefix="/ai"
+    )  # Registro do blueprint de IA com lazy loading
 
     # Custom Jinja filter for date formatting
     def format_date_filter(value: Union[datetime, date], format: str = "%d/%m/%Y") -> str:
@@ -153,15 +146,23 @@ def create_app() -> Flask:
     def inject_ai_status() -> dict:
         """
         Injects AI availability status into templates.
+        Checks if AI is enabled and working without heavy imports.
         """
-        if AI_ASSISTANT_AVAILABLE:
-            try:
-                from app.services.ai_assistant import ai_assistant
+        try:
+            # Check if AI is enabled in config
+            import os
 
-                return {"ai_available": ai_assistant.is_enabled()}
-            except Exception:
-                return {"ai_available": False}
-        return {"ai_available": False}
+            config_path = os.path.join("config", "ai_settings.json")
+            if os.path.exists(config_path):
+                import json
+
+                with open(config_path, "r", encoding="utf-8") as f:
+                    settings = json.load(f)
+                ai_enabled = settings.get("ai_enabled", False)
+                return {"ai_available": ai_enabled, "ai_can_load": ai_enabled}
+            return {"ai_available": False, "ai_can_load": False}
+        except Exception:
+            return {"ai_available": False, "ai_can_load": False}
 
     @login_manager.user_loader
     def load_user(user_id: str) -> Union[User, None]:  # Assuming User model or None

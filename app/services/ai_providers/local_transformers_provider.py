@@ -34,7 +34,12 @@ class LocalTransformersProvider(BaseAIProvider):
         self.model = None
         self.tokenizer = None
         self.pipeline = None
-        self.model_name = settings.get("model_name", "microsoft/DialoGPT-small")
+
+        # Get model name from local provider settings or fallback to global settings
+        local_settings = settings.get("providers", {}).get("local", {})
+        self.model_name = local_settings.get("model_name") or settings.get(
+            "model_name", "microsoft/DialoGPT-medium"
+        )
         self.device = self._detect_optimal_device(settings)
 
     def _detect_optimal_device(self, settings: Dict[str, Any]) -> str:
@@ -98,18 +103,35 @@ class LocalTransformersProvider(BaseAIProvider):
 
         try:
             logger.info("Initializing Local Transformers provider...")
+            logger.info(f"Model: {self.model_name}")
             logger.info(f"Target device: {self.device}")
 
-            cache_dir = self.settings.get("cache_dir", "./models_cache/")
+            cache_dir = (
+                self.settings.get("providers", {})
+                .get("local", {})
+                .get("cache_dir", "./models_cache/")
+            )
 
             # Load tokenizer first
             logger.info(f"Loading tokenizer for {self.model_name}")
             self.tokenizer = AutoTokenizer.from_pretrained(
-                self.model_name, cache_dir=cache_dir, trust_remote_code=True
+                self.model_name,
+                cache_dir=cache_dir,
+                trust_remote_code=True,
+                local_files_only=False,  # Allow downloading if needed
             )
 
+            # Add pad token if missing
+            if self.tokenizer.pad_token is None:
+                self.tokenizer.pad_token = self.tokenizer.eos_token
+                logger.info("Added pad token to tokenizer")
+
             # Configure model loading based on device
-            model_kwargs = {"cache_dir": cache_dir, "trust_remote_code": True}
+            model_kwargs = {
+                "cache_dir": cache_dir,
+                "trust_remote_code": True,
+                "local_files_only": False,  # Allow downloading if needed
+            }
 
             if "cuda" in self.device and torch.cuda.is_available():
                 # GPU configuration
@@ -122,44 +144,49 @@ class LocalTransformersProvider(BaseAIProvider):
                     }
                 )
             else:
-                # CPU configuration
-                logger.info("Configuring for CPU")
+                # CPU configuration - more conservative
+                logger.info("Configuring for CPU (conservative settings)")
                 model_kwargs.update(
                     {
-                        "torch_dtype": torch.float32,
+                        "torch_dtype": torch.float32,  # Use FP32 for CPU stability
                         "device_map": None,
-                    }  # Use FP32 for CPU
+                        "low_cpu_mem_usage": True,  # Help with memory management
+                    }
                 )
 
             # Load model
-            logger.info(f"Loading model {self.model_name}")
+            logger.info(f"Loading model {self.model_name} (this may take a while...)")
             self.model = AutoModelForCausalLM.from_pretrained(self.model_name, **model_kwargs)
 
-            # Move to device if needed
-            if "cuda" not in str(self.model.device) and "cuda" in self.device:
-                logger.info(f"Moving model to {self.device}")
-                self.model = self.model.to(self.device)
+            # Move to device if needed (CPU case)
+            if self.device == "cpu":
+                logger.info("Ensuring model is on CPU")
+                self.model = self.model.to("cpu")
 
-            # Create pipeline
+            # Create pipeline with conservative settings
             pipeline_kwargs = {
                 "model": self.model,
                 "tokenizer": self.tokenizer,
-                "max_new_tokens": self.settings.get("max_tokens", 512),
+                "max_new_tokens": min(
+                    self.settings.get("max_tokens", 512), 256
+                ),  # Limit for stability
                 "temperature": self.settings.get("temperature", 0.7),
                 "do_sample": True,
                 "return_full_text": False,
+                "pad_token_id": self.tokenizer.eos_token_id,  # Ensure proper padding
             }
 
-            # Add device to pipeline if GPU
+            # Add device to pipeline if needed
             if "cuda" in self.device:
                 pipeline_kwargs["device"] = self.device
 
+            logger.info("Creating text generation pipeline...")
             self.pipeline = pipeline("text-generation", **pipeline_kwargs)
 
             self.is_initialized = True
-            logger.info(f"Local Transformers provider initialized successfully on {self.device}")
+            logger.info(f"✅ Local Transformers provider initialized successfully on {self.device}")
 
-            # Log GPU memory info if available
+            # Log memory info if available
             if "cuda" in self.device and torch.cuda.is_available():
                 try:
                     memory_allocated = torch.cuda.memory_allocated(self.device) / 1024**3  # GB
@@ -173,7 +200,10 @@ class LocalTransformersProvider(BaseAIProvider):
             return True
 
         except Exception as e:
-            logger.error(f"Failed to initialize Local Transformers provider: {e}")
+            logger.error(f"❌ Failed to initialize Local Transformers provider: {e}")
+            logger.error(f"Model: {self.model_name}, Device: {self.device}")
+            # Clean up on failure
+            self.cleanup()
             return False
 
     def is_available(self) -> bool:
@@ -193,6 +223,8 @@ class LocalTransformersProvider(BaseAIProvider):
                 "success": False,
                 "error": "Local Transformers provider not available",
                 "response": "",
+                "provider": "Local Transformers",
+                "model": self.model_name,
             }
 
         try:
@@ -201,16 +233,20 @@ class LocalTransformersProvider(BaseAIProvider):
 
             # Generate response using pipeline
             try:
-                # Use the pipeline for simpler generation
+                # Use the pipeline for simpler generation with better parameters
                 generated = self.pipeline(
                     prompt,
-                    max_length=len(prompt.split()) + self.settings.get("max_tokens", 150),
-                    temperature=self.settings.get("temperature", 0.7),
+                    max_new_tokens=min(
+                        self.settings.get("max_tokens", 150), 100
+                    ),  # Limit for quality
+                    temperature=0.8,  # Slightly higher for creativity
                     do_sample=True,
                     truncation=True,
                     pad_token_id=self.tokenizer.eos_token_id,
-                    no_repeat_ngram_size=3,
+                    no_repeat_ngram_size=2,  # Prevent repetition
                     top_p=0.9,
+                    top_k=50,  # Limit vocabulary for better coherence
+                    repetition_penalty=1.1,  # Penalize repetition
                 )
 
                 # Extract the generated text
@@ -222,6 +258,16 @@ class LocalTransformersProvider(BaseAIProvider):
 
                 # Clean up the response
                 response_text = self._clean_response(response_text)
+
+                # Check if response is empty or too short
+                if not response_text or len(response_text.strip()) < 10:
+                    return {
+                        "success": False,
+                        "error": "AI model failed to generate a valid response",
+                        "response": "",
+                        "provider": "Local Transformers",
+                        "model": self.model_name,
+                    }
 
                 return {
                     "success": True,
@@ -239,6 +285,8 @@ class LocalTransformersProvider(BaseAIProvider):
                         "success": False,
                         "error": "Model components not available",
                         "response": "",
+                        "provider": "Local Transformers",
+                        "model": self.model_name,
                     }
 
                 # Fallback to basic generation
@@ -259,51 +307,65 @@ class LocalTransformersProvider(BaseAIProvider):
                 generated_text = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
                 response_text = generated_text[len(prompt) :].strip()
 
+                # Clean the response
+                cleaned_response = self._clean_response(response_text)
+
+                # Check if response is empty or too short
+                if not cleaned_response or len(cleaned_response.strip()) < 10:
+                    return {
+                        "success": False,
+                        "error": "AI model failed to generate a valid response",
+                        "response": "",
+                        "provider": "Local Transformers",
+                        "model": self.model_name,
+                    }
+
                 return {
                     "success": True,
-                    "response": self.format_response(self._clean_response(response_text)),
+                    "response": self.format_response(cleaned_response),
                     "model": self.model_name,
                     "provider": "Local Transformers",
                 }
 
         except Exception as e:
             logger.error(f"Error generating response: {e}")
-            return {"success": False, "error": str(e), "response": ""}
+            return {
+                "success": False,
+                "error": str(e),
+                "response": "",
+                "provider": "Local Transformers",
+                "model": self.model_name,
+            }
 
     def _prepare_prompt(self, query: str, context: Optional[str] = None) -> str:
         """Prepare prompt for the AI model"""
         system_prompt = self.settings.get(
             "system_prompt",
-            "Você é um assistente especializado em odontologia. Responda de forma clara e precisa.",
+            "Você é um assistente especializado em odontologia.",
         )
 
-        prompt = system_prompt + "\n\n"
-
+        # More direct prompt structure for GPT-2 style models
         if context:
-            prompt += f"Contexto: {context}\n\n"
-
-        prompt += f"Pergunta: {query}\n\nResposta:"
+            prompt = f"{system_prompt}\n\nContexto: {context}\n\nPergunta: {query}\n\nResposta:"
+        else:
+            prompt = f"{system_prompt}\n\nPergunta: {query}\n\nResposta:"
 
         return prompt
 
     def _clean_response(self, response: str) -> str:
         """Clean and format the AI response"""
         if not response:
-            return "Desculpe, não consegui gerar uma resposta adequada."
+            return ""
 
         # Remove common artifacts
         response = response.strip()
 
-        # Remove partial sentences at the end
-        sentences = response.split(".")
-        if len(sentences) > 1 and sentences[-1].strip() and len(sentences[-1].strip()) < 10:
-            response = ".".join(sentences[:-1]) + "."
-
-        # Ensure minimum length
-        if len(response.strip()) < 20:
-            return (
-                "Desculpe, não consegui gerar uma resposta completa. Tente reformular sua pergunta."
-            )
+        # Remove incomplete sentences at the end
+        if not response.endswith(".") and not response.endswith("!") and not response.endswith("?"):
+            # Find the last complete sentence
+            last_punct = max(response.rfind("."), response.rfind("!"), response.rfind("?"))
+            if last_punct > 0:
+                response = response[: last_punct + 1]
 
         return response
 

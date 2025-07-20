@@ -112,12 +112,15 @@ def index():
                     results = results_data["item"]
                     if not results and search_term:
                         flash(
-                            f'Nenhum resultado encontrado para "{search_term}" em {api_type.upper()}{current_uf_display}. (API: {results_data.get("mensagem", "Sem detalhes")})',
+                            f'Nenhum resultado encontrado para "{search_term}" em '
+                            f"{api_type.upper()}{current_uf_display}. "
+                            f'(API: {results_data.get("mensagem", "Sem detalhes")})',
                             "info",
                         )
                 elif isinstance(results_data, dict) and results_data.get("status") == "false":
                     flash(
-                        f'API ({api_type.upper()}{current_uf_display}) retornou erro: {results_data.get("mensagem", "Erro da API")}',
+                        f"API ({api_type.upper()}{current_uf_display}) retornou erro: "
+                        f'{results_data.get("mensagem", "Erro da API")}',
                         "warning",
                     )
                     results = []

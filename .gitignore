@@ -48,6 +48,7 @@ MANIFEST
 
 # Test, coverage, and profiling
 htmlcov/
+models_cache/
 .tox/
 .nox/
 .coverage

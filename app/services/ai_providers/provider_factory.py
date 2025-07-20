@@ -6,6 +6,8 @@ import logging
 from typing import Any, Dict, Optional, Type
 
 from .base_provider import BaseAIProvider
+from .custom_dental_provider import CustomDentalProvider
+from .gguf_provider import GGUFProvider
 from .local_transformers_provider import LocalTransformersProvider
 from .openai_provider import OpenAIProvider
 from .simple_local_provider import SimpleLocalProvider
@@ -27,6 +29,9 @@ class ProviderFactory:
         "local": LocalTransformersProvider,
         "transformers": LocalTransformersProvider,  # Alias
         "simple": SimpleLocalProvider,
+        "gguf": GGUFProvider,
+        "custom": CustomDentalProvider,
+        "dental": CustomDentalProvider,  # Alias
     }
 
     @classmethod

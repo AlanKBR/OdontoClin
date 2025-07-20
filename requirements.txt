@@ -1,25 +1,17 @@
-Flask==2.3.3
-Flask-SQLAlchemy==3.1.1
-Flask-Login==0.6.3
-Flask-WTF==1.2.1
-WTForms==3.1.1
-markupsafe==2.1.5
-email-validator
-requests
-Flask-Mobility==1.1.0
-
-# AI Dependencies (Optional - for AI Assistant)
-# Primary: vLLM (high performance, Linux/WSL recommended)
-# vllm>=0.2.7
-# 
-# Local AI Providers (Windows compatible):
-# For NVIDIA GPU: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-# For AMD GPU (RX 5700): pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.6
-# For CPU only: pip install torch torchvision torchaudio
-torch>=2.0.0
-transformers>=4.30.0
-accelerate>=0.20.0
-sentencepiece>=0.1.99
-# Utilities
-requests>=2.31.0
-psutil>=5.9.0
+Flask           # Framework web principal
+Flask-SQLAlchemy # ORM para integração com bancos de dados
+Flask-Login      # Gerenciamento de autenticação de usuários
+Flask-WTF        # Integração de formulários WTForms ao Flask
+WTForms          # Criação e validação de formulários
+markupsafe       # Segurança para renderização de templates
+email-validator  # Validação de e-mails em formulários
+requests         # Requisições HTTP
+Flask-Mobility   # Detecção de dispositivos móveis
+torch            # Framework de deep learning (AI)
+accelerate       # Otimização de execução de modelos AI
+sentencepiece    # Tokenização de texto para modelos AI
+protobuf         # Serialização de dados (usado por AI)
+openai           # Integração com API OpenAI
+llama-cpp-python # Suporte a modelos GGUF (AI local)
+psutil           # Monitoramento de recursos do sistema
+huggingface-hub[hf_xet] # Download de modelos AI via Hugging Face

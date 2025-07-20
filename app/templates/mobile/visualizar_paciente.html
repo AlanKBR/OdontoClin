@@ -1,4 +1,4 @@
-{% extends 'mobile/base.html' %}
+{% extends "mobile/base.html" %}
 {% block title %}
     {{ paciente.nome }} - OdontoClinic
 {% endblock title %}
@@ -214,7 +214,7 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <form method="post"
                           action="{{ url_for('pacientes.excluir_paciente', paciente_id=paciente.id) }}"
-                          style="display: inline">
+                          class="d-inline">
                         <button type="submit" class="btn btn-danger">Excluir</button>
                     </form>
                 </div>

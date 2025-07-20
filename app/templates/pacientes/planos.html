@@ -28,7 +28,7 @@
                                 <td>{{ plano.data_criacao|date }}</td>
                                 <td>{{ plano.descricao|truncate(50) }}</td>
                                 <td>
-                                    <span class="badge {% if plano.status == 'Pendente' %}bg-warning{% elif plano.status == 'Em andamento' %}bg-primary{% elif plano.status == 'Concluído' %}bg-success{% elif plano.status == 'Cancelado' %}bg-danger{% endif %}">
+                                    <span class="badge {% if plano.status == "Pendente" %}bg-warning{% elif plano.status == "Em andamento" %}bg-primary{% elif plano.status == "Concluído" %}bg-success{% elif plano.status == "Cancelado" %}bg-danger{% endif %}">
                                         {{ plano.status }}
                                     </span>
                                 </td>

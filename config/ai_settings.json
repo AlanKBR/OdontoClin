@@ -1,16 +1,18 @@
 {
   "ai_enabled": true,
-  "model_name": "pierreguillou/gpt2-small-portuguese",
-  "max_tokens": 512,
-  "temperature": 0.7,
+  "model_name": "Lucy-in-the-Sky/Qwen2.5-1.5B-Instruct-Q6_K-GGUF",
+  "max_tokens": 2048,
+  "temperature": 0.2,
   "request_timeout": 30,
-  "system_prompt": "Você é um assistente especializado em odontologia. Responda de forma clara, precisa e baseado em evidências científicas.",
+  "system_prompt": "Você é um assistente especializado em odontologia",
   "providers": {
     "preferred_order": [
-      "simple",
+      "gguf",
       "local",
-      "vllm",
-      "openai"
+      "simple",
+      "custom",
+      "openai",
+      "vllm"
     ],
     "vllm": {
       "server_url": "http://localhost:8000",
@@ -21,9 +23,18 @@
     },
     "local": {
       "cache_dir": "./models_cache/",
-      "device": "auto",
-      "gpu_type": "amd",
-      "backend": "cpu_optimized"
+      "device": "cpu",
+      "gpu_type": "none",
+      "backend": "cpu_optimized",
+      "model_name": "gpt2"
+    },
+    "gguf": {
+      "cache_dir": "./models_cache/",
+      "model_name": "Lucy-in-the-Sky/Qwen2.5-1.5B-Instruct-Q6_K-GGUF",
+      "n_ctx": 32768,
+      "n_threads": 4,
+      "n_gpu_layers": 0,
+      "verbose": false
     },
     "openai": {
       "api_key": "",
@@ -32,13 +43,16 @@
     }
   },
   "ui_settings": {
-    "show_in_sidebar": true,
     "enable_chat_history": true,
+    "show_in_sidebar": true,
     "max_history_items": 50
   },
   "safety_settings": {
+    "enable_content_filter": false,
     "max_query_length": 2000,
-    "enable_content_filter": true,
     "medical_disclaimer": false
-  }
+  },
+  "processing_method": "cpu",
+  "selected_model": "Lucy-in-the-Sky/Qwen2.5-1.5B-Instruct-Q6_K-GGUF",
+  "provider_change": true
 }

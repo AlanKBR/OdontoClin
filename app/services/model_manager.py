@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import shutil
+import subprocess
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -52,6 +53,9 @@ class ModelManager:
 
         # Sistema de progresso de download
         self.download_progress = {}
+
+        # Sistema de cancelamento de downloads
+        self.active_downloads = {}  # model_name -> {"process": subprocess, "thread": thread}
 
         # Filtros de modelos recomendados para aplicações médicas/odontológicas
         self.medical_keywords = [
@@ -105,16 +109,74 @@ class ModelManager:
             # Converter nome da pasta para nome do modelo
             model_name = model_path.name.replace("models--", "").replace("--", "/")
 
-            # Calcular tamanho
-            total_size = sum(f.stat().st_size for f in model_path.rglob("*") if f.is_file())
+            # Calcular tamanho (ignorar arquivos corrompidos)
+            total_size = 0
+            file_count = 0
+            actual_model_files = 0
+            size_type = "actual"
+
+            try:
+                for file_path in model_path.rglob("*"):
+                    if file_path.is_file():
+                        try:
+                            file_size = file_path.stat().st_size
+                            total_size += file_size
+                            file_count += 1
+
+                            # Contar arquivos de modelo reais (não metadados)
+                            if (
+                                file_path.suffix.lower()
+                                in [".gguf", ".bin", ".safetensors", ".pt", ".pth"]
+                                or file_size > 1024 * 1024
+                            ):  # Arquivos > 1MB são provavelmente modelos
+                                actual_model_files += 1
+
+                        except (OSError, PermissionError) as e:
+                            logger.debug(f"Erro ao acessar arquivo {file_path}: {e}")
+                            continue
+            except Exception as e:
+                logger.debug(f"Erro ao calcular tamanho de {model_path}: {e}")
+
             size_mb = round(total_size / (1024 * 1024), 1)
             size_gb = round(total_size / (1024 * 1024 * 1024), 2)
 
-            # Tentar ler configuração do modelo
-            config_info = self._read_model_config(model_path)
+            # Detectar se o modelo está incompleto ou corrompido
+            is_incomplete = False
+            status_info = ""
+
+            if total_size == 0:
+                size_type = "unavailable"
+                is_incomplete = True
+                status_info = "Download incompleto ou corrompido"
+            elif (
+                actual_model_files == 0 and total_size < 10 * 1024 * 1024
+            ):  # Menos de 10MB sem arquivos de modelo
+                size_type = "incomplete"
+                is_incomplete = True
+                status_info = "Apenas metadados - download incompleto"
+            elif actual_model_files == 0:
+                size_type = "metadata_only"
+                status_info = "Contém apenas metadados"
+
+            # Tentar ler configuração do modelo (sem gerar erro se falhar)
+            config_info = {}
+            try:
+                config_info = self._read_model_config(model_path)
+            except Exception as e:
+                logger.debug(f"Erro ao ler config de {model_name}: {e}")
 
             # Determinar tipo baseado no nome e configuração
             model_type = self._determine_model_type(model_name, config_info)
+
+            # Melhor formatação do tamanho
+            if total_size == 0:
+                size_display = "Download incompleto"
+            elif is_incomplete and actual_model_files == 0:
+                size_display = f"{size_mb} MB (apenas metadados)"
+            elif size_gb >= 1:
+                size_display = f"{size_gb} GB"
+            else:
+                size_display = f"{size_mb} MB"
 
             return {
                 "name": model_name,
@@ -123,28 +185,67 @@ class ModelManager:
                 "path": str(model_path),
                 "size_mb": size_mb,
                 "size_gb": size_gb,
-                "size_display": f"{size_gb} GB" if size_gb >= 1 else f"{size_mb} MB",
+                "size_display": size_display,
+                "size_type": size_type,
+                "is_incomplete": is_incomplete,
+                "status_info": status_info,
+                "actual_model_files": actual_model_files,
                 "type": model_type,
                 "config": config_info,
                 "installed": True,
                 "can_remove": True,
+                "file_count": file_count,
             }
         except Exception as e:
-            logger.error(f"Erro ao analisar modelo {model_path}: {e}")
-            return None
+            logger.warning(f"Erro ao analisar modelo {model_path}: {e}")
+            # Retornar informações básicas mesmo se houver erro
+            try:
+                model_name = model_path.name.replace("models--", "").replace("--", "/")
+                return {
+                    "name": model_name,
+                    "display_name": model_name.split("/")[-1],
+                    "organization": (model_name.split("/")[0] if "/" in model_name else "local"),
+                    "path": str(model_path),
+                    "size_mb": 0,
+                    "size_gb": 0,
+                    "size_display": "Tamanho desconhecido",
+                    "type": "unknown",
+                    "config": {},
+                    "installed": True,
+                    "can_remove": True,
+                    "error": str(e),
+                }
+            except Exception:
+                return None
 
     def _read_model_config(self, model_path: Path) -> Dict[str, Any]:
         """Lê configuração de um modelo local"""
         config = {}
 
         try:
-            # Procurar config.json nos snapshots
+            # Procurar config.json nos snapshots (ignorar .no_exist)
             for config_file in model_path.rglob("config.json"):
-                with open(config_file, "r", encoding="utf-8") as f:
-                    config = json.load(f)
-                    break
+                # Ignorar arquivos na pasta .no_exist (contém configs vazios/corrompidos)
+                if ".no_exist" in str(config_file):
+                    logger.debug(f"Ignorando config em .no_exist: {config_file}")
+                    continue
+
+                try:
+                    with open(config_file, "r", encoding="utf-8") as f:
+                        content = f.read().strip()
+                        if not content:
+                            logger.debug(f"Config vazio ignorado: {config_file}")
+                            continue
+
+                        config = json.loads(content)
+                        logger.debug(f"Config lido com sucesso: {config_file}")
+                        break
+                except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                    logger.debug(f"Erro ao ler config {config_file}: {e}")
+                    continue
+
         except Exception as e:
-            logger.error(f"Não foi possível ler config de {model_path}: {e}")
+            logger.error(f"Erro geral ao ler config de {model_path}: {e}")
 
         return config
 
@@ -178,7 +279,7 @@ class ModelManager:
     def search_huggingface_models(
         self, query: str = "", filter_type: str = "all", limit: int = 20
     ) -> List[Dict[str, Any]]:
-        """Busca modelos no Hugging Face Hub"""
+        """Busca modelos no Hugging Face Hub, incluindo variantes quantizadas de repositórios GGUF"""
         if not self.is_available():
             logger.warning("ModelManager not available for HF search")
             return []
@@ -191,39 +292,88 @@ class ModelManager:
                 logger.info("No query provided, returning recommended models")
                 models.extend(self._get_recommended_models())
             else:
-                logger.info(f"Searching HF Hub for: '{query}' with filter: '{filter_type}'")
+                logger.info(
+                    f"Searching HF Hub for: '{query}' with filter: '{filter_type}', limit: {limit}"
+                )
 
                 if not self.api:
                     logger.error("HuggingFace Hub not available")
                     return []
 
-                # Buscar no HF Hub
-                search_results = self.api.list_models(
-                    search=query,
-                    limit=limit,
-                    sort="downloads",
-                    direction=-1,
-                    library="transformers",
-                )
+                try:
+                    # Buscar no HF Hub com parâmetros otimizados
+                    search_results = self.api.list_models(
+                        search=query,
+                        limit=max(limit, 50),  # Garantir pelo menos 50 resultados para filtrar
+                        sort="downloads",
+                        direction=-1,
+                        library=["transformers", "gguf"],  # Incluir modelos GGUF também
+                    )
 
-                logger.info(f"HF Hub returned {len(list(search_results))} initial results")
+                    logger.info(f"Found {len(list(search_results))} raw results from HF Hub")
 
-                # Reset iterator since we consumed it for counting
-                search_results = self.api.list_models(
-                    search=query,
-                    limit=limit,
-                    sort="downloads",
-                    direction=-1,
-                    library="transformers",
-                )
+                    # Recriar iterator para processar os resultados
+                    search_results = self.api.list_models(
+                        search=query,
+                        limit=max(limit, 50),
+                        sort="downloads",
+                        direction=-1,
+                        library=["transformers", "gguf"],
+                    )
 
-                for model in search_results:
-                    model_info = self._format_huggingface_model(model)
-                    if model_info:
-                        if self._filter_model(model_info, filter_type):
-                            models.append(model_info)
+                    processed_count = 0
+                    for model in search_results:
+                        # Verificar se é um repositório GGUF que deve ter suas variantes listadas
+                        model_name = model.id
+                        is_gguf_repo = self._is_gguf_repository(model)
 
-                logger.info(f"Final models after processing: {len(models)}")
+                        if is_gguf_repo:
+                            # Para repositórios GGUF, listar todas as variantes quantizadas
+                            logger.info(
+                                f"Found GGUF repository: {model_name}, fetching variants..."
+                            )
+                            gguf_variants = self._get_gguf_variants(model_name)
+
+                            for variant in gguf_variants:
+                                if self._filter_model(variant, filter_type):
+                                    models.append(variant)
+                                    processed_count += 1
+
+                                    # Parar quando tivermos modelos suficientes
+                                    if len(models) >= limit:
+                                        break
+                        else:
+                            # Para modelos normais, processar como antes
+                            model_info = self._format_huggingface_model(model)
+                            if model_info:
+                                if self._filter_model(model_info, filter_type):
+                                    models.append(model_info)
+                                    processed_count += 1
+
+                                    # Parar quando tivermos modelos suficientes
+                                    if len(models) >= limit:
+                                        break
+
+                        # Parar quando tivermos modelos suficientes
+                        if len(models) >= limit:
+                            break
+
+                    logger.info(
+                        f"Processed {processed_count} models, returning {len(models)} results"
+                    )
+
+                except Exception as search_error:
+                    logger.error(f"Error during HF search: {search_error}")
+                    # Fallback para modelos recomendados se a busca falhar
+                    if query.lower() in ["bio", "medical", "mistral", "biomistral"]:
+                        logger.info("Falling back to recommended medical models")
+                        models.extend(
+                            [
+                                m
+                                for m in self._get_recommended_models()
+                                if query.lower() in m.get("name", "").lower()
+                            ]
+                        )
 
             return models[:limit]
 
@@ -240,6 +390,9 @@ class ModelManager:
                 # Verificar se já está instalado
                 installed = self._is_model_installed(model_name)
 
+                # Tentar obter tamanho real
+                size_info = self._get_model_size(model_name)
+
                 models.append(
                     {
                         "name": model_name,
@@ -250,7 +403,12 @@ class ModelManager:
                         "installed": installed,
                         "can_download": not installed,
                         "downloads": "N/A",
-                        "size_estimate": "Varia",
+                        "size_estimate": size_info["formatted"],
+                        "size_bytes": size_info["bytes"],
+                        "size_type": size_info["type"],
+                        "last_modified": None,
+                        "created_at": None,
+                        "file_count": size_info.get("file_count", 0),
                     }
                 )
             except Exception as e:
@@ -269,8 +427,13 @@ class ModelManager:
             if hasattr(model, "card_data") and model.card_data:
                 description = model.card_data.get("title", model_name)
 
-            # Obter tamanho do modelo
+            # Obter tamanho do modelo de forma mais precisa
             size_info = self._get_model_size(model_name)
+
+            # Formatação da data de modificação
+            last_modified = None
+            if hasattr(model, "last_modified") and model.last_modified:
+                last_modified = model.last_modified
 
             return {
                 "name": model_name,
@@ -283,7 +446,10 @@ class ModelManager:
                 "downloads": getattr(model, "downloads", 0),
                 "size_estimate": size_info["formatted"],
                 "size_bytes": size_info["bytes"],
-                "last_modified": getattr(model, "last_modified", None),
+                "size_type": size_info["type"],  # "actual", "unknown", "error", "unavailable"
+                "last_modified": last_modified,
+                "created_at": getattr(model, "created_at", None),
+                "file_count": size_info.get("file_count", 0),
             }
         except Exception as e:
             logger.error(f"Erro ao formatar modelo {model}: {e}")
@@ -316,15 +482,31 @@ class ModelManager:
         return model_path.exists()
 
     def download_model(self, model_name: str, progress_callback=None) -> Dict[str, Any]:
-        """Baixa um modelo do Hugging Face com progresso"""
+        """Baixa um modelo do Hugging Face com progresso, incluindo variantes GGUF específicas"""
         if not self.is_available():
             return {"success": False, "error": "Hugging Face Hub não disponível"}
 
-        if self._is_model_installed(model_name):
-            return {"success": False, "error": "Modelo já está instalado"}
+        # Verificar se é uma variante GGUF específica (formato: model_name:file_name)
+        is_gguf_variant = ":" in model_name
+        if is_gguf_variant:
+            base_model_name, file_name = model_name.split(":", 1)
+            display_name = f"{base_model_name} ({file_name})"
+
+            if self._is_gguf_variant_installed(base_model_name, file_name):
+                return {
+                    "success": False,
+                    "error": f"Variante GGUF {display_name} já está instalada",
+                }
+        else:
+            base_model_name = model_name
+            file_name = None
+            display_name = model_name
+
+            if self._is_model_installed(model_name):
+                return {"success": False, "error": "Modelo já está instalado"}
 
         try:
-            logger.info(f"Iniciando download do modelo: {model_name}")
+            logger.info(f"Iniciando download: {display_name}")
 
             # Verificar espaço em disco
             disk_space = self._get_available_disk_space()
@@ -343,20 +525,22 @@ class ModelManager:
 
             # Download com progresso customizado
             try:
-                local_path = self._download_with_progress(model_name)
+                if is_gguf_variant:
+                    local_path = self._download_gguf_variant(
+                        base_model_name, file_name, progress_callback
+                    )
+                else:
+                    local_path = self._download_with_progress(model_name, progress_callback)
 
-                self._update_download_progress(model_name, 100, "Download concluído!")
-                if progress_callback:
-                    progress_callback(100, "Download concluído!")
-
-                logger.info(f"Modelo {model_name} baixado com sucesso em {local_path}")
+                # Não atualizar progresso aqui - já foi feito nos métodos específicos
+                logger.info(f"{display_name} baixado com sucesso em {local_path}")
 
                 # Limpar progresso após sucesso
                 self._clear_download_progress(model_name)
 
                 return {
                     "success": True,
-                    "message": f"Modelo {model_name} baixado com sucesso",
+                    "message": f"{display_name} baixado com sucesso",
                     "path": local_path,
                 }
 
@@ -368,33 +552,233 @@ class ModelManager:
             self._clear_download_progress(model_name)
             return {
                 "success": False,
-                "error": f"Modelo {model_name} não encontrado no Hugging Face",
+                "error": f"Modelo {base_model_name} não encontrado no Hugging Face",
             }
         except RevisionNotFoundError:
             self._clear_download_progress(model_name)
             return {
                 "success": False,
-                "error": f"Versão do modelo {model_name} não encontrada",
+                "error": f"Versão do modelo {base_model_name} não encontrada",
             }
         except Exception as e:
             self._clear_download_progress(model_name)
-            logger.error(f"Erro ao baixar modelo {model_name}: {e}")
+            logger.error(f"Erro ao baixar {display_name}: {e}")
             return {"success": False, "error": f"Erro no download: {str(e)}"}
 
-    def _download_with_progress(self, model_name: str) -> str:
-        """Download com monitoramento de progresso"""
+    def _download_with_progress(self, model_name: str, progress_callback=None) -> str:
+        """Download com progresso usando callback nativo do HuggingFace Hub"""
         if not snapshot_download:
             raise RuntimeError("HuggingFace Hub not available")
 
-        # Download usando snapshot_download
-        local_path = snapshot_download(
-            repo_id=model_name,
-            cache_dir=str(self.cache_dir),
-            local_files_only=False,
-            resume_download=True,
-        )
+        try:
+            from .download_progress import download_manager
 
-        return local_path
+            logger.info(f"Iniciando download com progresso nativo: {model_name}")
+
+            # Inicializar progresso
+            self._update_download_progress(model_name, 5, "Iniciando download...")
+            if progress_callback:
+                progress_callback(5, "Iniciando download...")
+
+            # Callback para sincronizar com o sistema antigo
+            def sync_progress_callback(progress_info):
+                """Sincroniza progresso com o sistema antigo para compatibilidade"""
+                progress_pct = progress_info.get("progress", 0)
+                status = progress_info.get("status", "Baixando...")
+
+                # Atualizar sistema antigo
+                self._update_download_progress(
+                    model_name,
+                    progress_pct,
+                    status,
+                    downloaded_bytes=progress_info.get("downloaded_bytes", 0),
+                    total_bytes=progress_info.get("total_bytes", 0),
+                    speed=progress_info.get("speed", 0),
+                    eta=progress_info.get("eta", 0),
+                )
+
+                # Chamar callback externo se fornecido
+                if progress_callback:
+                    progress_callback(progress_pct, status)
+
+            # Iniciar download usando o novo sistema
+            success = download_manager.start_download(model_name, sync_progress_callback)
+
+            if not success:
+                raise Exception("Falha ao iniciar download - já em andamento")
+
+            # Aguardar conclusão do download
+            while download_manager.is_downloading(model_name):
+                time.sleep(0.5)
+
+                # Verificar se foi cancelado
+                if self._is_download_cancelled(model_name):
+                    download_manager.cancel_download(model_name)
+                    raise Exception("Download cancelado pelo usuário")
+
+            # Verificar resultado final
+            final_progress = download_manager.get_progress(model_name)
+
+            if final_progress.get("error"):
+                raise Exception(f"Erro no download: {final_progress['error']}")
+
+            local_path = final_progress.get("local_path")
+            if not local_path:
+                # Fallback para download simples
+                logger.warning("Caminho local não encontrado, fazendo fallback")
+                local_path = snapshot_download(
+                    repo_id=model_name, cache_dir=str(self.cache_dir), local_files_only=False
+                )
+
+            logger.info(f"Download concluído: {model_name}")
+            return local_path
+
+        except Exception as e:
+            logger.error(f"Erro no download: {e}")
+            raise
+
+    def _download_gguf_variant(
+        self, model_name: str, file_name: str, progress_callback=None
+    ) -> str:
+        """Download de uma variante GGUF específica com progresso real"""
+        if not hf_hub_download:
+            raise RuntimeError("HuggingFace Hub not available")
+
+        try:
+            logger.info(f"Downloading GGUF variant: {model_name}/{file_name}")
+
+            # Usar o nome completo para progresso
+            full_model_name = f"{model_name}:{file_name}"
+
+            import time
+            from datetime import timedelta
+
+            # Inicializar progresso
+            self._update_download_progress(
+                full_model_name, 1, f"Preparando download de {file_name}..."
+            )
+            if progress_callback:
+                progress_callback(1, f"Preparando download de {file_name}...")
+
+            # Tentar interceptar progresso com tqdm para GGUF
+            try:
+                import tqdm
+
+                logger.info(f"Iniciando download GGUF com monitoramento: {file_name}")
+
+                start_time = time.time()
+                original_tqdm = tqdm.tqdm
+
+                def gguf_tqdm(*args, **kwargs):
+                    """tqdm personalizado para downloads GGUF"""
+                    pbar = original_tqdm(*args, **kwargs)
+
+                    if hasattr(pbar, "total") and pbar.total and pbar.total > 0:
+                        original_update = pbar.update
+
+                        def update_wrapper(n=1):
+                            result = original_update(n)
+
+                            # Capturar progresso real do arquivo GGUF
+                            if pbar.total > 0:
+                                downloaded = pbar.n
+                                total = pbar.total
+                                progress = int((downloaded / total) * 100)
+
+                                # Calcular velocidade real
+                                current_time = time.time()
+                                elapsed = current_time - start_time
+                                speed = downloaded / elapsed if elapsed > 0 else 0
+
+                                # ETA
+                                remaining = total - downloaded
+                                eta = remaining / speed if speed > 0 else 0
+
+                                # Formatar informações
+                                downloaded_mb = downloaded / (1024 * 1024)
+                                total_mb = total / (1024 * 1024)
+                                speed_mb = speed / (1024 * 1024)
+
+                                if eta > 0:
+                                    eta_str = str(timedelta(seconds=int(eta)))
+                                    status = (
+                                        f"Baixando {file_name}: "
+                                        f"{downloaded_mb:.1f}/{total_mb:.1f} MB "
+                                        f"({speed_mb:.1f} MB/s, ETA: {eta_str})"
+                                    )
+                                else:
+                                    status = (
+                                        f"Baixando {file_name}: "
+                                        f"{downloaded_mb:.1f}/{total_mb:.1f} MB "
+                                        f"({speed_mb:.1f} MB/s)"
+                                    )
+
+                                # Ajustar progresso para dar espaço para finalização
+                                adjusted_progress = max(5, min(95, progress))
+
+                                self._update_download_progress(
+                                    full_model_name,
+                                    adjusted_progress,
+                                    status,
+                                    downloaded_bytes=downloaded,
+                                    total_bytes=total,
+                                    speed=speed,
+                                    eta=int(eta),
+                                )
+
+                                if progress_callback:
+                                    progress_callback(adjusted_progress, status)
+
+                            return result
+
+                        pbar.update = update_wrapper  # type: ignore[attr-defined]
+
+                    return pbar
+
+                # Substituir tqdm
+                tqdm.tqdm = gguf_tqdm
+
+                try:
+                    # Download do arquivo específico com progresso real
+                    local_path = hf_hub_download(
+                        repo_id=model_name,
+                        filename=file_name,
+                        cache_dir=str(self.cache_dir),
+                        local_files_only=False,
+                        resume_download=True,
+                    )
+                finally:
+                    # Restaurar tqdm
+                    tqdm.tqdm = original_tqdm
+
+            except ImportError:
+                # Fallback sem tqdm - download direto
+                logger.info("tqdm não disponível, usando download direto")
+
+                self._update_download_progress(full_model_name, 10, f"Baixando {file_name}...")
+                if progress_callback:
+                    progress_callback(10, f"Baixando {file_name}...")
+
+                # Download do arquivo
+                local_path = hf_hub_download(
+                    repo_id=model_name,
+                    filename=file_name,
+                    cache_dir=str(self.cache_dir),
+                    local_files_only=False,
+                    resume_download=True,
+                )
+
+            # Progresso final
+            self._update_download_progress(full_model_name, 100, "Download concluído!", eta=0)
+            if progress_callback:
+                progress_callback(100, "Download concluído!")
+
+            logger.info(f"GGUF variant downloaded to: {local_path}")
+            return local_path
+
+        except Exception as e:
+            logger.error(f"Error downloading GGUF variant {model_name}/{file_name}: {e}")
+            raise
 
     def remove_model(self, model_name: str) -> Dict[str, Any]:
         """Remove um modelo instalado"""
@@ -665,34 +1049,6 @@ class ModelManager:
 
         return False
 
-    def _get_model_size(self, model_name: str) -> Dict[str, Any]:
-        """Obtém o tamanho do modelo do HF Hub"""
-        try:
-            if not self.is_available() or not model_info:
-                return {"formatted": "Desconhecido", "bytes": 0}
-
-            # Tentar obter informações do modelo
-            info = model_info(model_name)
-
-            if hasattr(info, "siblings") and info.siblings:
-                total_size = 0
-                for sibling in info.siblings:
-                    if hasattr(sibling, "size") and sibling.size:
-                        total_size += sibling.size
-
-                if total_size > 0:
-                    return {
-                        "bytes": total_size,
-                        "formatted": self._format_size(total_size),
-                    }
-
-            # Fallback: estimar baseado no nome do modelo
-            return self._estimate_model_size(model_name)
-
-        except Exception as e:
-            logger.warning(f"Erro ao obter tamanho do modelo {model_name}: {e}")
-            return {"formatted": "Desconhecido", "bytes": 0}
-
     def _format_size(self, size_bytes: int) -> str:
         """Formata tamanho em bytes para formato legível"""
         if size_bytes < 1024:
@@ -703,6 +1059,151 @@ class ModelManager:
             return f"{size_bytes / (1024 * 1024):.1f} MB"
         else:
             return f"{size_bytes / (1024 * 1024 * 1024):.1f} GB"
+
+    def _extract_params_info(self, model_info) -> Optional[Dict[str, Any]]:
+        """Extrai informações de parâmetros do modelo do HuggingFace"""
+        try:
+            # Verificar se há informações de card_data com parâmetros
+            if hasattr(model_info, "card_data") and model_info.card_data:
+                card_data = model_info.card_data
+
+                # Procurar por diferentes campos que podem conter informação de parâmetros
+                param_fields = ["model_size", "parameters", "params", "model_parameters"]
+
+                for field in param_fields:
+                    if field in card_data and card_data[field]:
+                        param_value = card_data[field]
+
+                        # Tentar converter para número se for string
+                        if isinstance(param_value, str):
+                            size_bytes = self._parse_param_string(param_value)
+                            if size_bytes > 0:
+                                return {
+                                    "bytes": size_bytes,
+                                    "formatted": self._format_size(size_bytes),
+                                    "type": "actual",
+                                    "source": f"params ({field})",
+                                }
+                        elif isinstance(param_value, (int, float)):
+                            # Assumir que está em milhões de parâmetros
+                            # Aproximadamente 4 bytes por parâmetro (float32)
+                            size_bytes = int(param_value * 1_000_000 * 4)
+                            return {
+                                "bytes": size_bytes,
+                                "formatted": self._format_size(size_bytes),
+                                "type": "actual",
+                                "source": f"params ({param_value}M)",
+                            }
+
+                # Verificar em tags também
+                if "tags" in card_data and isinstance(card_data["tags"], list):
+                    for tag in card_data["tags"]:
+                        if isinstance(tag, str) and any(
+                            keyword in tag.lower() for keyword in ["param", "size", "b", "m"]
+                        ):
+                            size_bytes = self._parse_param_string(tag)
+                            if size_bytes > 0:
+                                return {
+                                    "bytes": size_bytes,
+                                    "formatted": self._format_size(size_bytes),
+                                    "type": "actual",
+                                    "source": f"tag ({tag})",
+                                }
+
+            # Verificar nas tags diretas do modelo
+            if hasattr(model_info, "tags") and model_info.tags:
+                for tag in model_info.tags:
+                    if isinstance(tag, str):
+                        size_bytes = self._parse_param_string(tag)
+                        if size_bytes > 0:
+                            return {
+                                "bytes": size_bytes,
+                                "formatted": self._format_size(size_bytes),
+                                "type": "actual",
+                                "source": f"model_tag ({tag})",
+                            }
+
+            return None
+
+        except Exception as e:
+            logger.warning(f"Erro ao extrair informações de parâmetros: {e}")
+            return None
+
+    def _parse_param_string(self, param_str: str) -> int:
+        """Converte string de parâmetros para bytes estimados"""
+        try:
+            param_str = param_str.lower().strip()
+
+            # Padrões comuns: "7b", "13b", "70b", "1.3b", "110m", etc.
+            import re
+
+            # Procurar por padrões como "7b", "1.5b", "110m", etc.
+            patterns = [
+                r"(\d+\.?\d*)\s*b(?:illion)?",  # 7b, 1.5b, etc.
+                r"(\d+\.?\d*)\s*m(?:illion)?",  # 110m, 1.5m, etc.
+                r"(\d+\.?\d*)\s*k(?:ilo)?",  # 500k, etc.
+                r"(\d+\.?\d*)\s*params?",  # 7params, etc.
+            ]
+
+            for pattern in patterns:
+                match = re.search(pattern, param_str)
+                if match:
+                    number = float(match.group(1))
+
+                    if "b" in pattern:  # Bilhões
+                        # Bilhões de parâmetros * 4 bytes por parâmetro
+                        return int(number * 1_000_000_000 * 4)
+                    elif "m" in pattern:  # Milhões
+                        return int(number * 1_000_000 * 4)
+                    elif "k" in pattern:  # Milhares
+                        return int(number * 1_000 * 4)
+                    else:  # params direto
+                        return int(number * 4)
+
+            return 0
+
+        except Exception as e:
+            logger.warning(f"Erro ao parsear string de parâmetros '{param_str}': {e}")
+            return 0
+
+    def _get_model_size(self, model_name: str) -> Dict[str, Any]:
+        """Obtém o tamanho do modelo do HF Hub de forma mais precisa"""
+        try:
+            if not self.is_available() or not model_info:
+                return {"formatted": "Não disponível", "bytes": 0, "type": "unavailable"}
+
+            # Tentar obter informações do modelo
+            info = model_info(model_name)
+
+            # Primeiro, tentar obter informações de parâmetros se disponível
+            params_info = self._extract_params_info(info)
+            if params_info:
+                return params_info
+
+            # Fallback: calcular tamanho pelos arquivos
+            if hasattr(info, "siblings") and info.siblings:
+                total_size = 0
+                file_count = 0
+
+                for sibling in info.siblings:
+                    if hasattr(sibling, "size") and sibling.size:
+                        total_size += sibling.size
+                        file_count += 1
+
+                if total_size > 0:
+                    return {
+                        "bytes": total_size,
+                        "formatted": self._format_size(total_size),
+                        "type": "actual",
+                        "file_count": file_count,
+                    }
+
+            # Se não conseguir obter tamanho real, indicar claramente
+            return {"formatted": "Tamanho não informado", "bytes": 0, "type": "unknown"}
+
+        except Exception as e:
+            logger.warning(f"Erro ao obter tamanho do modelo {model_name}: {e}")
+            return {"formatted": "Erro ao obter tamanho", "bytes": 0, "type": "error"}
 
     def _estimate_model_size(self, model_name: str) -> Dict[str, Any]:
         """Estima o tamanho do modelo baseado no nome"""
@@ -767,18 +1268,18 @@ class ModelManager:
         model_name: str,
         progress: int,
         status: str,
-        downloaded: int = 0,
-        total: int = 0,
+        downloaded_bytes: int = 0,
+        total_bytes: int = 0,
         speed: float = 0,
         eta: int = 0,
     ):
-        """Atualiza o progresso do download"""
+        """Atualiza o progresso do download com informações detalhadas"""
         self.download_progress[model_name] = {
             "downloading": progress < 100,
             "progress": progress,
             "status": status,
-            "downloaded_bytes": downloaded,
-            "total_bytes": total,
+            "downloaded_bytes": downloaded_bytes,
+            "total_bytes": total_bytes,
             "speed": speed,
             "eta": eta,
             "timestamp": time.time(),
@@ -788,3 +1289,304 @@ class ModelManager:
         """Limpa o progresso do download"""
         if model_name in self.download_progress:
             del self.download_progress[model_name]
+
+    def cancel_download(self, model_name: str) -> Dict[str, Any]:
+        """Cancela um download em andamento"""
+        try:
+            if model_name not in self.active_downloads:
+                return {"success": False, "error": "Nenhum download ativo encontrado"}
+
+            download_info = self.active_downloads[model_name]
+            process = download_info.get("process")
+
+            if process and process.poll() is None:  # Processo ainda está rodando
+                logger.info(f"🛑 Cancelando download: {model_name}")
+
+                # Marcar como cancelado
+                self._update_download_progress(model_name, 0, "Cancelando download...")
+
+                # Terminar processo
+                try:
+                    process.terminate()
+                    # Aguardar terminação graceful
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    logger.warning("Processo não terminou graciosamente, forçando...")
+                    process.kill()
+                    process.wait()
+
+                self._cleanup_download(model_name)
+
+                return {
+                    "success": True,
+                    "message": f"Download de {model_name} cancelado com sucesso",
+                }
+            else:
+                self._cleanup_download(model_name)
+                return {"success": False, "error": "Download já terminou"}
+
+        except Exception as e:
+            logger.error(f"Erro ao cancelar download de {model_name}: {e}")
+            return {"success": False, "error": f"Erro no cancelamento: {str(e)}"}
+
+    def _is_download_cancelled(self, model_name: str) -> bool:
+        """Verifica se um download foi marcado para cancelamento"""
+        # Verificar se o download ainda está na lista de ativos
+        if model_name not in self.active_downloads:
+            return True
+
+        # Verificar se o progresso indica cancelamento
+        progress = self.download_progress.get(model_name, {})
+        status = progress.get("status", "")
+        return "cancelando" in status.lower() or "cancelado" in status.lower()
+
+    def _cleanup_download(self, model_name: str):
+        """Limpa recursos de um download finalizado ou cancelado"""
+        try:
+            # Remover da lista de downloads ativos
+            if model_name in self.active_downloads:
+                del self.active_downloads[model_name]
+                logger.debug(f"Download {model_name} removido da lista de ativos")
+
+            # Manter o progresso por um tempo para que o frontend possa ler o status final
+            # O progresso será limpo pela próxima operação ou reinicialização
+
+        except Exception as e:
+            logger.error(f"Erro no cleanup de {model_name}: {e}")
+
+    def get_active_downloads(self) -> List[str]:
+        """Retorna lista de downloads atualmente ativos"""
+        active = []
+        for model_name, download_info in self.active_downloads.items():
+            process = download_info.get("process")
+            if process and process.poll() is None:  # Processo ainda rodando
+                active.append(model_name)
+            else:
+                # Processo terminou, fazer cleanup
+                self._cleanup_download(model_name)
+
+        return active
+
+    def _is_gguf_repository(self, model) -> bool:
+        """Verifica se um repositório contém principalmente arquivos GGUF"""
+        try:
+            model_name = model.id
+
+            # Verificação rápida baseada no nome
+            if "gguf" in model_name.lower():
+                return True
+
+            # Verificar tags do modelo
+            if hasattr(model, "tags") and model.tags:
+                if "gguf" in [tag.lower() for tag in model.tags]:
+                    return True
+
+            # Verificar se tem biblioteca GGUF
+            if hasattr(model, "library_name") and model.library_name == "gguf":
+                return True
+
+            return False
+
+        except Exception as e:
+            logger.error(f"Error checking if {model} is GGUF repository: {e}")
+            return False
+
+    def _get_gguf_variants(self, model_name: str) -> List[Dict[str, Any]]:
+        """Obtém todas as variantes GGUF de um repositório"""
+        try:
+            from huggingface_hub import list_repo_files
+
+            logger.info(f"Fetching GGUF variants for {model_name}")
+
+            # Listar todos os arquivos do repositório
+            files = list_repo_files(model_name, repo_type="model")
+
+            # Filtrar apenas arquivos .gguf
+            gguf_files = [f for f in files if f.lower().endswith(".gguf")]
+
+            logger.info(f"Found {len(gguf_files)} GGUF files in {model_name}")
+
+            variants = []
+            base_info = self._get_model_base_info(model_name)
+
+            for gguf_file in gguf_files:
+                # Extrair informações de quantização do nome do arquivo
+                quant_info = self._parse_gguf_filename(gguf_file)
+
+                # Criar entrada para cada variante
+                variant = {
+                    "name": f"{model_name}:{gguf_file}",  # Nome único para identificar o arquivo específico
+                    "display_name": f"{model_name.split('/')[-1]} - {quant_info['display_name']}",
+                    "organization": model_name.split("/")[0] if "/" in model_name else "",
+                    "description": f"{base_info.get('description', model_name)} - {quant_info['description']}",
+                    "type": self._classify_model_type(model_name),
+                    "installed": self._is_gguf_variant_installed(model_name, gguf_file),
+                    "can_download": not self._is_gguf_variant_installed(model_name, gguf_file),
+                    "downloads": base_info.get("downloads", 0),
+                    "size_estimate": quant_info.get("size_estimate", "Unknown"),
+                    "size_bytes": 0,  # Seria necessário uma chamada adicional para obter o tamanho real
+                    "size_type": "estimated",
+                    "quantization": quant_info["quantization"],
+                    "precision": quant_info["precision"],
+                    "file_name": gguf_file,
+                    "is_gguf_variant": True,
+                    "base_model": model_name,
+                }
+
+                variants.append(variant)
+
+            # Ordenar por precisão (maiores primeiro)
+            variants.sort(
+                key=lambda x: self._quantization_sort_key(x["quantization"]), reverse=True
+            )
+
+            return variants
+
+        except Exception as e:
+            logger.error(f"Error fetching GGUF variants for {model_name}: {e}")
+            # Em caso de erro, retornar pelo menos o modelo base
+            base_model = self._format_huggingface_model_by_name(model_name)
+            return [base_model] if base_model else []
+
+    def _get_model_base_info(self, model_name: str) -> Dict[str, Any]:
+        """Obtém informações básicas de um modelo"""
+        try:
+            if self.api:
+                model_info = self.api.model_info(model_name)
+                return {
+                    "description": getattr(model_info, "id", model_name),
+                    "downloads": getattr(model_info, "downloads", 0),
+                }
+        except Exception as e:
+            logger.debug(f"Could not get base info for {model_name}: {e}")
+
+        return {"description": model_name, "downloads": 0}
+
+    def _parse_gguf_filename(self, filename: str) -> Dict[str, Any]:
+        """Extrai informações de quantização de um nome de arquivo GGUF"""
+        import re
+
+        # Padrões comuns de quantização GGUF
+        quantization_patterns = {
+            r"Q(\d+)_K_([SML])": lambda m: f"Q{m.group(1)}_K_{m.group(2)}",
+            r"Q(\d+)_K": lambda m: f"Q{m.group(1)}_K",
+            r"Q(\d+)_(\d+)": lambda m: f"Q{m.group(1)}_{m.group(2)}",
+            r"Q(\d+)": lambda m: f"Q{m.group(1)}",
+            r"F(\d+)": lambda m: f"F{m.group(1)}",
+            r"fp(\d+)": lambda m: f"FP{m.group(1)}",
+        }
+
+        filename_upper = filename.upper()
+        quantization = "Unknown"
+        precision = "Unknown"
+
+        for pattern, formatter in quantization_patterns.items():
+            match = re.search(pattern, filename_upper)
+            if match:
+                quantization = formatter(match)
+                break
+
+        # Estimar tamanho baseado na quantização
+        size_estimates = {
+            "Q2_K": "~2.5GB",
+            "Q3_K_S": "~3.5GB",
+            "Q3_K_M": "~4GB",
+            "Q3_K_L": "~4.5GB",
+            "Q4_K_S": "~4.5GB",
+            "Q4_K_M": "~5GB",
+            "Q4_0": "~4.5GB",
+            "Q4_1": "~5GB",
+            "Q5_K_S": "~5.5GB",
+            "Q5_K_M": "~6GB",
+            "Q5_0": "~5.5GB",
+            "Q5_1": "~6GB",
+            "Q6_K": "~6.5GB",
+            "Q8_0": "~7.5GB",
+            "F16": "~14GB",
+            "F32": "~28GB",
+        }
+
+        size_estimate = size_estimates.get(quantization, "Unknown")
+
+        # Extrair precisão
+        if "Q" in quantization:
+            precision = "Quantized"
+        elif "F16" in quantization:
+            precision = "Half Precision"
+        elif "F32" in quantization:
+            precision = "Full Precision"
+
+        return {
+            "quantization": quantization,
+            "precision": precision,
+            "size_estimate": size_estimate,
+            "display_name": quantization,
+            "description": f"Quantization: {quantization}, Est. Size: {size_estimate}",
+        }
+
+    def _quantization_sort_key(self, quantization: str) -> int:
+        """Retorna chave de ordenação para quantizações (maior precisão primeiro)"""
+        order = {
+            "F32": 100,
+            "F16": 90,
+            "Q8_0": 80,
+            "Q6_K": 70,
+            "Q5_K_M": 65,
+            "Q5_K_S": 64,
+            "Q5_1": 63,
+            "Q5_0": 62,
+            "Q4_K_M": 55,
+            "Q4_K_S": 54,
+            "Q4_1": 53,
+            "Q4_0": 52,
+            "Q3_K_L": 45,
+            "Q3_K_M": 44,
+            "Q3_K_S": 43,
+            "Q2_K": 30,
+        }
+        return order.get(quantization, 0)
+
+    def _is_gguf_variant_installed(self, model_name: str, gguf_file: str) -> bool:
+        """Verifica se uma variante GGUF específica está instalada"""
+        try:
+            model_path = self.cache_dir / f"models--{model_name.replace('/', '--')}"
+            if not model_path.exists():
+                return False
+
+            # Procurar pelo arquivo específico
+            for root, dirs, files in os.walk(model_path):
+                if gguf_file in files:
+                    return True
+
+            return False
+        except Exception as e:
+            logger.error(f"Error checking GGUF variant installation: {e}")
+            return False
+
+    def _format_huggingface_model_by_name(self, model_name: str) -> Optional[Dict[str, Any]]:
+        """Formata um modelo do HF Hub apenas pelo nome (fallback)"""
+        try:
+            installed = self._is_model_installed(model_name)
+            size_info = self._get_model_size(model_name)
+
+            return {
+                "name": model_name,
+                "display_name": model_name.split("/")[-1],
+                "organization": model_name.split("/")[0] if "/" in model_name else "",
+                "description": model_name,
+                "type": self._classify_model_type(model_name),
+                "installed": installed,
+                "can_download": not installed,
+                "downloads": 0,
+                "size_estimate": size_info["formatted"],
+                "size_bytes": size_info["bytes"],
+                "size_type": size_info["type"],
+                "last_modified": None,
+                "created_at": None,
+                "file_count": size_info.get("file_count", 0),
+            }
+        except Exception as e:
+            logger.error(f"Error formatting model {model_name}: {e}")
+            return None
+
+    # ... (métodos existentes continuam aqui)

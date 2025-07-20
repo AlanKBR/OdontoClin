@@ -77,16 +77,54 @@ class SimpleLocalProvider(BaseAIProvider):
                 "success": False,
                 "error": "Simple Local Provider not available",
                 "response": "",
+                "provider": "Simple Local",
+                "model": self.model_name,
             }
 
-        # Return clean message indicating no model is loaded
-        return {
-            "success": False,
-            "error": "Nenhum modelo de IA está carregado no momento. Acesse as configurações de IA para carregar um modelo.",
-            "response": "",
-            "model": "Simple Local Assistant",
-            "provider": "Simple Local",
-        }
+        try:
+            # Prepare the prompt with system prompt
+            system_prompt = self.settings.get("system_prompt", "Você é um assistente útil.")
+
+            if context:
+                prompt = f"{system_prompt}\n\nContexto: {context}\n\nPergunta: {query}\n\nResposta:"
+            else:
+                prompt = f"{system_prompt}\n\nPergunta: {query}\n\nResposta:"
+
+            # Generate response using the pipeline
+            response = self.pipeline(
+                prompt,
+                max_length=min(len(prompt.split()) + 50, 200),  # Conservative max length
+                do_sample=True,
+                temperature=0.7,
+                pad_token_id=self.pipeline.tokenizer.eos_token_id,
+                num_return_sequences=1,
+            )
+
+            # Extract the generated text
+            generated_text = response[0]["generated_text"]
+
+            # Clean up the response (remove the prompt part)
+            if "Resposta:" in generated_text:
+                response_text = generated_text.split("Resposta:")[-1].strip()
+            else:
+                response_text = generated_text.strip()
+
+            return {
+                "success": True,
+                "response": response_text,
+                "model": self.model_name,
+                "provider": "Simple Local",
+            }
+
+        except Exception as e:
+            logger.error(f"Error generating response: {e}")
+            return {
+                "success": False,
+                "error": f"Erro ao gerar resposta: {str(e)}",
+                "response": "",
+                "provider": "Simple Local",
+                "model": self.model_name,
+            }
 
     def cleanup(self):
         """Cleanup resources"""

@@ -37,10 +37,16 @@ class AIAssistantService:
         """Load AI settings from config file"""
         try:
             config_path = os.path.join("config", "ai_settings.json")
+            logger.info(f"Loading settings from: {config_path}")
+
             if os.path.exists(config_path):
                 with open(config_path, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            return {"ai_enabled": False}
+                    settings = json.load(f)
+                logger.info(f"Settings loaded successfully: {settings}")
+                return settings
+            else:
+                logger.warning(f"Config file not found at {config_path}, using defaults")
+                return {"ai_enabled": False}
         except Exception as e:
             logger.error(f"Error loading AI settings: {e}")
             return {"ai_enabled": False}
@@ -57,9 +63,38 @@ class AIAssistantService:
         try:
             logger.info("Initializing AI Assistant...")
 
-            # Get provider preference from settings
-            provider_config = self.settings.get("providers", {})
-            preferred_providers = provider_config.get("preferred_order", ["vllm", "openai"])
+            # Get model from settings
+            model_name = self.settings.get("selected_model") or self.settings.get("model_name")
+
+            if model_name:
+                # Auto-detect model type and adjust provider preference
+                from .model_type_detector import ModelTypeDetector
+
+                recommended_provider = ModelTypeDetector.get_recommended_provider(model_name)
+
+                # Get provider preference from settings
+                provider_config = self.settings.get("providers", {})
+                preferred_providers = provider_config.get(
+                    "preferred_order", ["gguf", "local", "vllm", "openai", "simple"]
+                )
+
+                # Move recommended provider to front if not already first
+                if (
+                    recommended_provider in preferred_providers
+                    and preferred_providers[0] != recommended_provider
+                ):
+                    preferred_providers = [recommended_provider] + [
+                        p for p in preferred_providers if p != recommended_provider
+                    ]
+                    logger.info(
+                        f"Auto-detected model type, prioritizing {recommended_provider} provider for {model_name}"
+                    )
+            else:
+                # Get provider preference from settings
+                provider_config = self.settings.get("providers", {})
+                preferred_providers = provider_config.get(
+                    "preferred_order", ["gguf", "local", "vllm", "openai", "simple"]
+                )
 
             # Create provider with fallback
             if ProviderFactory:
@@ -99,6 +134,8 @@ class AIAssistantService:
                 "success": False,
                 "error": "AI Assistant is disabled or providers not available",
                 "response": "",
+                "provider": "None",
+                "model": "None",
             }
 
         if not self.is_initialized and not self.initialize():
@@ -106,6 +143,8 @@ class AIAssistantService:
                 "success": False,
                 "error": "Failed to initialize AI provider",
                 "response": "",
+                "provider": "None",
+                "model": "None",
             }
 
         if not self.provider:
@@ -113,11 +152,26 @@ class AIAssistantService:
                 "success": False,
                 "error": "No AI provider available",
                 "response": "",
+                "provider": "None",
+                "model": "None",
             }
 
         try:
             # Generate response using the active provider
             result = self.provider.generate_response(query, context)
+
+            # Add provider information to error responses
+            if not result.get("success"):
+                if "provider" not in result:
+                    result["provider"] = (
+                        self.provider.__class__.__name__ if self.provider else "Unknown"
+                    )
+                if "model" not in result:
+                    result["model"] = (
+                        getattr(self.provider, "model_name", "Unknown")
+                        if self.provider
+                        else "Unknown"
+                    )
 
             # Store in chat history if enabled and successful
             if result.get("success") and self.settings.get("ui_settings", {}).get(
@@ -129,7 +183,15 @@ class AIAssistantService:
 
         except Exception as e:
             logger.error(f"Error generating AI response: {e}")
-            return {"success": False, "error": str(e), "response": ""}
+            return {
+                "success": False,
+                "error": str(e),
+                "response": "",
+                "provider": self.provider.__class__.__name__ if self.provider else "None",
+                "model": (
+                    getattr(self.provider, "model_name", "Unknown") if self.provider else "None"
+                ),
+            }
 
     def _prepare_prompt(self, query: str, context: Optional[str] = None) -> str:
         """Prepare the prompt for the AI model - delegated to provider"""
@@ -162,28 +224,49 @@ class AIAssistantService:
         self.chat_history = []
 
     def get_model_info(self) -> Dict[str, Any]:
-        """Get information about the current AI setup"""
-        if not self.is_enabled():
-            return {
-                "enabled": False,
-                "initialized": False,
-                "dependencies_available": AI_PROVIDERS_AVAILABLE,
-                "model_name": "N/A",
-            }
-
+        """Get comprehensive model information for display"""
         info = {
-            "enabled": True,
+            "enabled": self.is_enabled(),
             "initialized": self.is_initialized,
             "dependencies_available": AI_PROVIDERS_AVAILABLE,
-            "providers_available": AI_PROVIDERS_AVAILABLE,
-            "settings": self.settings,
-            "model_name": "Não inicializado",
+            "model_name": "Modelo desconhecido",
+            "provider_type": None,
+            "status": "not_initialized",
         }
 
-        if self.provider:
-            provider_info = self.provider.get_provider_info()
-            info["active_provider"] = provider_info
-            info["model_name"] = provider_info.get("model", "Modelo desconhecido")
+        if not self.is_enabled():
+            info["status"] = "disabled"
+            return info
+
+        if not AI_PROVIDERS_AVAILABLE:
+            info["status"] = "dependencies_missing"
+            return info
+
+        # Always try to get model name from settings first, regardless of initialization
+        if "selected_model" in self.settings:
+            info["model_name"] = self._format_model_name(self.settings["selected_model"])
+        elif "model_name" in self.settings:
+            info["model_name"] = self._format_model_name(self.settings["model_name"])
+
+        if self.is_initialized and self.provider:
+            try:
+                provider_info = self.provider.get_provider_info()
+                info.update(
+                    {
+                        "status": "initialized",
+                        "provider_type": provider_info.get("provider_type", "unknown"),
+                    }
+                )
+
+                # Always use model name from settings (already formatted above)
+                # Don't override with provider info which may not have the correct name
+
+            except Exception as e:
+                logger.error(f"Error getting model info: {e}")
+                info["model_name"] = "Erro ao obter informações do modelo"
+                info["status"] = "error"
+        else:
+            info["status"] = "not_initialized"
 
         return info
 
@@ -279,16 +362,27 @@ class AIAssistantService:
     def update_configuration(self, config_data: Dict[str, Any]) -> bool:
         """Update AI configuration"""
         try:
+            logger.info(f"Updating configuration with data: {config_data}")
+
             # Update settings
+            old_settings = self.settings.copy()
             self.settings.update(config_data)
+
+            logger.info(f"Settings before update: {old_settings}")
+            logger.info(f"Settings after update: {self.settings}")
 
             # Save to file
             config_path = os.path.join("config", "ai_settings.json")
+            logger.info(f"Saving configuration to: {config_path}")
+
             with open(config_path, "w", encoding="utf-8") as f:
                 json.dump(self.settings, f, indent=2, ensure_ascii=False)
 
+            logger.info("Configuration saved successfully to file")
+
             # If currently initialized and provider changed, reinitialize
             if self.is_initialized and config_data.get("provider_change"):
+                logger.info("Provider change detected, reinitializing...")
                 self.stop()
                 return self.initialize()
 
@@ -300,13 +394,37 @@ class AIAssistantService:
     def stop(self):
         """Stop AI assistant and cleanup resources"""
         try:
-            if self.provider and hasattr(self.provider, "cleanup"):
-                self.provider.cleanup()
+            logger.info("Stopping AI Assistant...")
+
+            # Cleanup provider if it exists
+            if self.provider:
+                logger.info(f"Cleaning up provider: {self.provider.__class__.__name__}")
+                if hasattr(self.provider, "cleanup"):
+                    self.provider.cleanup()
+                    logger.info("Provider cleanup completed")
+                else:
+                    logger.warning("Provider has no cleanup method")
+
+            # Clear provider reference
             self.provider = None
+
+            # Mark as not initialized
             self.is_initialized = False
-            logger.info("AI Assistant stopped")
+
+            # Force garbage collection to free memory
+            import gc
+
+            gc.collect()
+
+            logger.info("AI Assistant stopped successfully")
+            return True
+
         except Exception as e:
             logger.error(f"Error stopping AI Assistant: {e}")
+            # Even if there's an error, ensure we're marked as stopped
+            self.provider = None
+            self.is_initialized = False
+            return False
 
     def get_detailed_status(self) -> Dict[str, Any]:
         """Get detailed status information"""
@@ -329,6 +447,34 @@ class AIAssistantService:
                 logger.error(f"Error getting provider info: {e}")
 
         return status
+
+    def _format_model_name(self, model_name: str) -> str:
+        """Format model name for better display"""
+        if not model_name or model_name in ["Modelo desconhecido", "Nenhum modelo selecionado"]:
+            return model_name
+
+        # Extract meaningful part from model name
+        if "/" in model_name:
+            parts = model_name.split("/")
+            if len(parts) >= 2:
+                # Format: "Organization/Model-Name" -> "Model-Name (Organization)"
+                org = parts[0]
+                model = parts[1]
+
+                # Clean up model name
+                model_clean = model.replace("-GGUF", "").replace("-Instruct", "")
+
+                # Special cases for better readability
+                if "BioMistral" in model:
+                    return f"BioMistral ({org})"
+                elif "Qwen" in model:
+                    return f"Qwen 2.5 Coder 1.5B ({org})"
+                elif "Mistral" in model:
+                    return f"Mistral 7B Instruct ({org})"
+                else:
+                    return f"{model_clean} ({org})"
+
+        return model_name
 
 
 # Global instance - singleton pattern for efficiency

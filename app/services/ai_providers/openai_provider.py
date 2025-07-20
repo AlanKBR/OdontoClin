@@ -50,6 +50,8 @@ class OpenAIProvider(BaseAIProvider):
                 "success": False,
                 "error": "OpenAI provider not available (API key required)",
                 "response": "",
+                "provider": "OpenAI",
+                "model": self.model_name,
             }
 
         try:
@@ -106,6 +108,8 @@ class OpenAIProvider(BaseAIProvider):
                     "success": False,
                     "error": f"API error: {error_data.get('error', {}).get('message', 'Unknown error')}",
                     "response": "",
+                    "provider": "OpenAI",
+                    "model": self.model_name,
                 }
 
         except requests.exceptions.RequestException as e:
@@ -114,10 +118,18 @@ class OpenAIProvider(BaseAIProvider):
                 "success": False,
                 "error": f"Connection error: {str(e)}",
                 "response": "",
+                "provider": "OpenAI",
+                "model": self.model_name,
             }
         except Exception as e:
             logger.error(f"Unexpected error: {e}")
-            return {"success": False, "error": str(e), "response": ""}
+            return {
+                "success": False,
+                "error": str(e),
+                "response": "",
+                "provider": "OpenAI",
+                "model": self.model_name,
+            }
 
     def get_provider_info(self) -> Dict[str, Any]:
         """Get OpenAI provider information"""

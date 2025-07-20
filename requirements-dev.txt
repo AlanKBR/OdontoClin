@@ -1,5 +1,5 @@
-flake8==7.0.0
-black==24.3.0
-isort==5.12.0
-ruff
-djlint
+flake8   # Linter para código Python
+black   # Formatador automático de código Python
+isort   # Organizador de imports Python
+ruff    # Linter e formatador rápido para Python
+djlint  # Linter para templates Django/Jinja/HTML
