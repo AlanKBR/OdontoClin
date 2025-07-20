@@ -34,6 +34,15 @@ MANIFEST
 !.vscode/extensions.json
 *.code-workspace
 
+# Editor/Config files to ignore
+.eslintignore
+.eslintrc.json
+.flake8
+.jshintrc
+.pylintrc
+OdontoClin.code-workspace
+eslint.config.mjs
+
 # Backup and temporary files
 *.bak
 *.old
