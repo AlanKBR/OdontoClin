@@ -89,6 +89,7 @@ Thumbs.db
 
 # Model cache and AI-related temporary files
 models_cache/
+models_cache/*
 models_cache/downloads/
 models_cache/temp/
 *.tmp
