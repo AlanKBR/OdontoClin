@@ -278,6 +278,7 @@ def gerar_pdf(documento_id):
         # Preencher template usando Jinja2
         from flask import render_template_string
         from markupsafe import escape
+
         # Sanitizar todos os dados do template
         safe_context = {k: escape(str(v)) for k, v in dados_template.items()}
         try:
@@ -435,6 +436,7 @@ def gerar_html(documento_id):
         # Preencher template usando Jinja2
         from flask import render_template_string
         from markupsafe import escape
+
         # Sanitizar todos os dados do template
         safe_context = {k: escape(str(v)) for k, v in dados_template.items()}
         try:

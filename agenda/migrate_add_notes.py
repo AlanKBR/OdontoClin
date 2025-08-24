@@ -2,9 +2,7 @@ import os
 import sqlite3
 
 DB_PATHS = [
-    os.path.join(
-        os.path.dirname(__file__), os.pardir, "instance", "calendario.db"
-    ),
+    os.path.join(os.path.dirname(__file__), os.pardir, "instance", "calendario.db"),
     os.path.join(os.path.dirname(__file__), "calendario.db"),
     os.path.join(os.path.dirname(__file__), "instance", "calendario.db"),
 ]

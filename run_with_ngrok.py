@@ -25,12 +25,14 @@ from typing import Any, Optional
 try:
     from dotenv import load_dotenv  # type: ignore
 except Exception:  # pragma: no cover
+
     def load_dotenv() -> None:  # type: ignore
         return
 
+
 from flask import Flask
-from werkzeug.serving import BaseWSGIServer, make_server
 from pyngrok import conf, ngrok
+from werkzeug.serving import BaseWSGIServer, make_server
 
 
 def _truthy(val: Optional[str]) -> bool:
@@ -61,9 +63,7 @@ class _FlaskServerThread(threading.Thread):
         try:
             self._server: BaseWSGIServer = make_server(host, port, app)
         except OSError as exc:
-            raise OSError(
-                f"Failed to bind to {host}:{port}. Is the port in use?"
-            ) from exc
+            raise OSError(f"Failed to bind to {host}:{port}. Is the port in use?") from exc
         self._ctx = app.app_context()
         self._ctx.push()
 
@@ -179,9 +179,7 @@ def main() -> None:
         help="Import string for app or factory (module:attr)",
     )
     parser.add_argument("--host", default=os.getenv("FLASK_HOST", "127.0.0.1"))
-    parser.add_argument(
-        "--port", type=int, default=int(os.getenv("FLASK_PORT", "5000"))
-    )
+    parser.add_argument("--port", type=int, default=int(os.getenv("FLASK_PORT", "5000")))
     parser.add_argument("--auth-token", dest="auth_token", default=None)
     parser.add_argument("--region", dest="region", default=None)
     parser.add_argument("--domain", dest="domain", default=os.getenv("NGROK_DOMAIN"))

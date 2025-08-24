@@ -4,9 +4,7 @@ import sqlite3
 # Verificar estrutura do users.db
 try:
     users_path = os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__), os.pardir, "instance", "users.db"
-        )
+        os.path.join(os.path.dirname(__file__), os.pardir, "instance", "users.db")
     )
     conn = sqlite3.connect(users_path)
     cursor = conn.cursor()
@@ -34,9 +32,7 @@ except Exception as e:
 # Verificar estrutura do pacientes.db também
 try:
     pacientes_path = os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__), os.pardir, "instance", "pacientes.db"
-        )
+        os.path.join(os.path.dirname(__file__), os.pardir, "instance", "pacientes.db")
     )
     conn = sqlite3.connect(pacientes_path)
     cursor = conn.cursor()
@@ -64,9 +60,7 @@ except Exception as e:
 # Verificar estrutura do calendario.db (raiz e instance)
 for path in [
     os.path.abspath(
-        os.path.join(
-            os.path.dirname(__file__), os.pardir, "instance", "calendario.db"
-        )
+        os.path.join(os.path.dirname(__file__), os.pardir, "instance", "calendario.db")
     ),
 ]:
     try:

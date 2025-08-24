@@ -112,9 +112,7 @@ class AppSetting(db.Model):
     __tablename__ = "app_settings"
     key = db.Column(db.String(100), primary_key=True)
     value = db.Column(db.String(1000), nullable=True)
-    updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 # Holidays table to cache Invertexto results (not treated as events)
@@ -129,9 +127,7 @@ class Holiday(db.Model):
     state = db.Column(db.String(5), nullable=True)
     year = db.Column(db.Integer, nullable=False)
     source = db.Column(db.String(50), nullable=False, default="invertexto")
-    updated_at = db.Column(
-        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
-    )
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def to_dict(self):
         return {
@@ -206,9 +202,7 @@ def _load_valid_dentist_ids() -> set[int]:
                 ids: set[int] = set()
             else:
                 cur.execute("SELECT id FROM users")
-                ids = {
-                    int(r[0]) for r in cur.fetchall() if r and r[0] is not None
-                }
+                ids = {int(r[0]) for r in cur.fetchall() if r and r[0] is not None}
         finally:
             try:
                 conn.close()
@@ -271,24 +265,15 @@ def _load_dentists_list_cached(
                     "full_name",
                     "username",
                 ]
-                name_col = next(
-                    (c for c in name_candidates if c in cols), None
-                )
+                name_col = next((c for c in name_candidates if c in cols), None)
                 if not name_col:
                     name_col = "id"
-                color_col = (
-                    "color"
-                    if "color" in cols
-                    else ("cor" if "cor" in cols else None)
-                )
+                color_col = "color" if "color" in cols else ("cor" if "cor" in cols else None)
                 sel_cols = [
                     "id",
                     name_col,
                 ] + ([color_col] if color_col else [])
-                q = (
-                    f"SELECT {', '.join(sel_cols)} FROM users "
-                    f"ORDER BY {name_col}"
-                )
+                q = f"SELECT {', '.join(sel_cols)} FROM users " f"ORDER BY {name_col}"
                 cur.execute(q)
                 rows = cur.fetchall()
                 dentists = []
@@ -296,9 +281,7 @@ def _load_dentists_list_cached(
                     did = r["id"]
                     name = r[name_col]
                     color_val = r[color_col] if color_col else None
-                    dentists.append(
-                        {"id": did, "nome": name, "color": color_val}
-                    )
+                    dentists.append({"id": did, "nome": name, "color": color_val})
         finally:
             try:
                 conn.close()
@@ -411,11 +394,7 @@ def normalize_for_storage(dt: datetime, is_date_only: bool) -> str:
     """
     if not dt:
         return ""
-    return (
-        dt.strftime("%Y-%m-%d")
-        if is_date_only
-        else dt.strftime("%Y-%m-%dT%H:%M:%S")
-    )
+    return dt.strftime("%Y-%m-%d") if is_date_only else dt.strftime("%Y-%m-%dT%H:%M:%S")
 
 
 def _color_hexes_for_query(query_text: str) -> list[str]:
@@ -493,16 +472,14 @@ def get_events():
     query_text = (request.args.get("q") or "").strip()
     # Filtrar por dentistas selecionados (CSV de ids inteiros)
     dentists_param = (request.args.get("dentists") or "").strip()
-    include_unassigned = (
-        request.args.get("include_unassigned") or ""
-    ).strip() in ("1", "true", "True")
+    include_unassigned = (request.args.get("include_unassigned") or "").strip() in (
+        "1",
+        "true",
+        "True",
+    )
     if dentists_param:
         try:
-            ids = [
-                int(x)
-                for x in dentists_param.split(",")
-                if x.strip().isdigit()
-            ]
+            ids = [int(x) for x in dentists_param.split(",") if x.strip().isdigit()]
             col_prof = getattr(CalendarEvent, "profissional_id")
             if ids and include_unassigned:
                 q = q.filter(or_(col_prof.in_(ids), col_prof.is_(None)))
@@ -583,16 +560,14 @@ def events_search_range():
     q = CalendarEvent.query
     # filtros de dentista
     dentists_param = (request.args.get("dentists") or "").strip()
-    include_unassigned = (
-        request.args.get("include_unassigned") or ""
-    ).strip() in ("1", "true", "True")
+    include_unassigned = (request.args.get("include_unassigned") or "").strip() in (
+        "1",
+        "true",
+        "True",
+    )
     if dentists_param:
         try:
-            ids = [
-                int(x)
-                for x in dentists_param.split(",")
-                if x.strip().isdigit()
-            ]
+            ids = [int(x) for x in dentists_param.split(",") if x.strip().isdigit()]
             col_prof = getattr(CalendarEvent, "profissional_id")
             if ids and include_unassigned:
                 q = q.filter(or_(col_prof.in_(ids), col_prof.is_(None)))
@@ -646,9 +621,7 @@ def add_event():
     raw_start = data.get("start")
     raw_end = data.get("end")
     start_dt, start_is_date_only = parse_input_datetime(raw_start)
-    end_dt, end_is_date_only = (
-        parse_input_datetime(raw_end) if raw_end else (None, None)
-    )
+    end_dt, end_is_date_only = parse_input_datetime(raw_end) if raw_end else (None, None)
 
     if not start_dt:
         return jsonify({"status": "error", "message": "Start inválido"}), 400
@@ -719,9 +692,7 @@ def update_event():
         start_dt, start_is_date_only = (
             parse_input_datetime(raw_start) if raw_start else (None, None)
         )
-        end_dt, end_is_date_only = (
-            parse_input_datetime(raw_end) if raw_end else (None, None)
-        )
+        end_dt, end_is_date_only = parse_input_datetime(raw_end) if raw_end else (None, None)
 
         if start_dt:
             if start_is_date_only:
@@ -744,9 +715,7 @@ def update_event():
         try:
             if "profissional_id" in data:
                 pid = data.get("profissional_id")
-                event.profissional_id = (
-                    int(pid) if str(pid).isdigit() else None
-                )
+                event.profissional_id = int(pid) if str(pid).isdigit() else None
         except Exception:
             pass
         db.session.commit()
@@ -868,10 +837,7 @@ def buscar_telefone():
 
         # Buscar primeiro por nome exato
         cursor.execute(
-            (
-                "SELECT celular FROM pacientes "
-                "WHERE LOWER(nome) = LOWER(?) LIMIT 1"
-            ),
+            ("SELECT celular FROM pacientes " "WHERE LOWER(nome) = LOWER(?) LIMIT 1"),
             (nome,),
         )
         result = cursor.fetchone()
@@ -879,8 +845,7 @@ def buscar_telefone():
         # Se não encontrou, buscar por nome que contenha o termo
         if not result:
             cursor.execute(
-                "SELECT celular FROM pacientes WHERE LOWER(nome) LIKE "
-                "LOWER(?) LIMIT 1",
+                "SELECT celular FROM pacientes WHERE LOWER(nome) LIKE " "LOWER(?) LIMIT 1",
                 (f"%{nome}%",),
             )
             result = cursor.fetchone()
@@ -1062,26 +1027,12 @@ def holidays_in_range():
     key = (start, end)
     now = _utcnow()
     cached = _HOLIDAYS_RANGE_CACHE.get(key)
-    cached_at = (
-        _ensure_aware_utc(cached.get("at") if cached else None)
-        if cached
-        else None
-    )
-    if (
-        cached
-        and cached_at
-        and (now - cached_at) <= timedelta(seconds=_HOLIDAYS_TTL_SECONDS)
-    ):
+    cached_at = _ensure_aware_utc(cached.get("at") if cached else None) if cached else None
+    if cached and cached_at and (now - cached_at) <= timedelta(seconds=_HOLIDAYS_TTL_SECONDS):
         resp = jsonify(cached.get("data", []))
-        resp.headers["Cache-Control"] = (
-            f"public, max-age={_HOLIDAYS_TTL_SECONDS}"
-        )
+        resp.headers["Cache-Control"] = f"public, max-age={_HOLIDAYS_TTL_SECONDS}"
         return resp
-    rows = (
-        Holiday.query.filter(Holiday.date >= start)
-        .filter(Holiday.date <= end)
-        .all()
-    )
+    rows = Holiday.query.filter(Holiday.date >= start).filter(Holiday.date <= end).all()
     data = [h.to_dict() for h in rows]
     _HOLIDAYS_RANGE_CACHE[key] = {"data": data, "at": now}
     resp = jsonify(data)
@@ -1103,20 +1054,10 @@ def holidays_by_year():
         return jsonify([])
     now = _utcnow()
     cached = _HOLIDAYS_YEAR_CACHE.get(year)
-    cached_at = (
-        _ensure_aware_utc(cached.get("at") if cached else None)
-        if cached
-        else None
-    )
-    if (
-        cached
-        and cached_at
-        and (now - cached_at) <= timedelta(seconds=_HOLIDAYS_TTL_SECONDS)
-    ):
+    cached_at = _ensure_aware_utc(cached.get("at") if cached else None) if cached else None
+    if cached and cached_at and (now - cached_at) <= timedelta(seconds=_HOLIDAYS_TTL_SECONDS):
         resp = jsonify(cached.get("data", []))
-        resp.headers["Cache-Control"] = (
-            f"public, max-age={_HOLIDAYS_TTL_SECONDS}"
-        )
+        resp.headers["Cache-Control"] = f"public, max-age={_HOLIDAYS_TTL_SECONDS}"
         return resp
     rows = Holiday.query.filter(Holiday.year == year).all()
     data = [h.to_dict() for h in rows]

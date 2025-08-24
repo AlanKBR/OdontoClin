@@ -8,6 +8,7 @@ from datetime import timezone
 from typing import Callable
 
 from markupsafe import Markup, escape
+
 from app import create_app  # pylint: disable=import-self
 
 

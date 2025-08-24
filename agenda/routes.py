@@ -210,11 +210,7 @@ def parse_input_datetime(raw: Any):
 def normalize_for_storage(dt: datetime, is_date_only: bool) -> str:
     if not dt:
         return ""
-    return (
-        dt.strftime("%Y-%m-%d")
-        if is_date_only
-        else dt.strftime("%Y-%m-%dT%H:%M:%S")
-    )
+    return dt.strftime("%Y-%m-%d") if is_date_only else dt.strftime("%Y-%m-%dT%H:%M:%S")
 
 
 def _apply_query_filters(base_query, query_text: str):
@@ -253,16 +249,14 @@ def get_events():
     q = CalendarEvent.query
     query_text = (request.args.get("q") or "").strip()
     dentists_param = (request.args.get("dentists") or "").strip()
-    include_unassigned = (
-        request.args.get("include_unassigned") or ""
-    ).strip() in ("1", "true", "True")
+    include_unassigned = (request.args.get("include_unassigned") or "").strip() in (
+        "1",
+        "true",
+        "True",
+    )
     if dentists_param:
         try:
-            ids = [
-                int(x)
-                for x in dentists_param.split(",")
-                if x.strip().isdigit()
-            ]
+            ids = [int(x) for x in dentists_param.split(",") if x.strip().isdigit()]
             col_prof = getattr(CalendarEvent, "profissional_id")
             if ids and include_unassigned:
                 q = q.filter(or_(col_prof.in_(ids), col_prof.is_(None)))
@@ -285,11 +279,7 @@ def get_events():
                         conn = sqlite3.connect(db_path)
                         cur = conn.cursor()
                         cur.execute("SELECT id FROM users")
-                        valid_ids = {
-                            int(r[0])
-                            for r in cur.fetchall()
-                            if r and r[0] is not None
-                        }
+                        valid_ids = {int(r[0]) for r in cur.fetchall() if r and r[0] is not None}
                     finally:
                         try:
                             if conn is not None:
@@ -298,9 +288,7 @@ def get_events():
                             pass
                 q = q.filter(CalendarEvent.profissional_id.is_not(None))
                 if valid_ids:
-                    q = q.filter(
-                        ~CalendarEvent.profissional_id.in_(list(valid_ids))
-                    )
+                    q = q.filter(~CalendarEvent.profissional_id.in_(list(valid_ids)))
         except Exception:
             pass
     if range_start and range_end and not query_text:
@@ -325,16 +313,14 @@ def get_events():
 def events_search_range():
     q = CalendarEvent.query
     dentists_param = (request.args.get("dentists") or "").strip()
-    include_unassigned = (
-        request.args.get("include_unassigned") or ""
-    ).strip() in ("1", "true", "True")
+    include_unassigned = (request.args.get("include_unassigned") or "").strip() in (
+        "1",
+        "true",
+        "True",
+    )
     if dentists_param:
         try:
-            ids = [
-                int(x)
-                for x in dentists_param.split(",")
-                if x.strip().isdigit()
-            ]
+            ids = [int(x) for x in dentists_param.split(",") if x.strip().isdigit()]
             col_prof = getattr(CalendarEvent, "profissional_id")
             if ids and include_unassigned:
                 q = q.filter(or_(col_prof.in_(ids), col_prof.is_(None)))
@@ -356,11 +342,7 @@ def events_search_range():
                         conn = sqlite3.connect(db_path)
                         cur = conn.cursor()
                         cur.execute("SELECT id FROM users")
-                        valid_ids = {
-                            int(r[0])
-                            for r in cur.fetchall()
-                            if r and r[0] is not None
-                        }
+                        valid_ids = {int(r[0]) for r in cur.fetchall() if r and r[0] is not None}
                     finally:
                         try:
                             if conn is not None:
@@ -369,9 +351,7 @@ def events_search_range():
                             pass
                 q = q.filter(CalendarEvent.profissional_id.is_not(None))
                 if valid_ids:
-                    q = q.filter(
-                        ~CalendarEvent.profissional_id.in_(list(valid_ids))
-                    )
+                    q = q.filter(~CalendarEvent.profissional_id.in_(list(valid_ids)))
         except Exception:
             pass
     query_text = (request.args.get("q") or "").strip()
@@ -385,9 +365,7 @@ def events_search_range():
         ends = [e.end for e in events if e.end]
         min_start = min(starts) if starts else None
         max_end = max(ends) if ends else None
-        return jsonify(
-            {"min": min_start, "max": max_end, "count": len(events)}
-        )
+        return jsonify({"min": min_start, "max": max_end, "count": len(events)})
     except Exception:
         return jsonify({"min": None, "max": None, "count": 0})
 
@@ -398,9 +376,7 @@ def add_event():
     raw_start = data.get("start")
     raw_end = data.get("end")
     start_dt, start_is_date_only = parse_input_datetime(raw_start)
-    end_dt, end_is_date_only = (
-        parse_input_datetime(raw_end) if raw_end else (None, None)
-    )
+    end_dt, end_is_date_only = parse_input_datetime(raw_end) if raw_end else (None, None)
     if not start_dt:
         return jsonify({"status": "error", "message": "Start inválido"}), 400
     if start_is_date_only:
@@ -426,9 +402,7 @@ def add_event():
     new_event.notes = data.get("notes")
     pid_raw = data.get("profissional_id")
     new_event.profissional_id = (
-        int(pid_raw)
-        if isinstance(pid_raw, int | str) and str(pid_raw).isdigit()
-        else None
+        int(pid_raw) if isinstance(pid_raw, int | str) and str(pid_raw).isdigit() else None
     )
     db.session.add(new_event)
     db.session.commit()
@@ -456,12 +430,8 @@ def update_event():
     event = db.session.get(CalendarEvent, event_id)
     if not event:
         return jsonify({"status": "error", "message": "Event not found"}), 404
-    start_dt, start_is_date_only = (
-        parse_input_datetime(raw_start) if raw_start else (None, None)
-    )
-    end_dt, end_is_date_only = (
-        parse_input_datetime(raw_end) if raw_end else (None, None)
-    )
+    start_dt, start_is_date_only = parse_input_datetime(raw_start) if raw_start else (None, None)
+    end_dt, end_is_date_only = parse_input_datetime(raw_end) if raw_end else (None, None)
     if start_dt:
         if start_is_date_only:
             if not end_dt or not end_is_date_only or end_dt <= start_dt:
@@ -474,15 +444,11 @@ def update_event():
         start_is_date_only = bool(start_is_date_only)
         end_is_date_only = bool(end_is_date_only)
         event.start = normalize_for_storage(start_dt, start_is_date_only)
-        event.end = (
-            normalize_for_storage(end_dt, end_is_date_only) if end_dt else None
-        )
+        event.end = normalize_for_storage(end_dt, end_is_date_only) if end_dt else None
     if "profissional_id" in data:
         pid = data.get("profissional_id")
         event.profissional_id = (
-            int(pid)
-            if isinstance(pid, int | str) and str(pid).isdigit()
-            else None
+            int(pid) if isinstance(pid, int | str) and str(pid).isdigit() else None
         )
     db.session.commit()
     return jsonify({"status": "success"})
@@ -540,19 +506,9 @@ def listar_dentistas():
                     )
                     or "id"
                 )
-                color_col = (
-                    "color"
-                    if "color" in cols
-                    else ("cor" if "cor" in cols else None)
-                )
-                sel_cols = ["id", name_col] + (
-                    [color_col] if color_col else []
-                )
-                q = (
-                    "SELECT "
-                    f"{', '.join(sel_cols)} "
-                    f"FROM users ORDER BY {name_col}"
-                )
+                color_col = "color" if "color" in cols else ("cor" if "cor" in cols else None)
+                sel_cols = ["id", name_col] + ([color_col] if color_col else [])
+                q = "SELECT " f"{', '.join(sel_cols)} " f"FROM users ORDER BY {name_col}"
                 cur.execute(q)
                 for r in cur.fetchall():
                     did = r[0]
@@ -570,10 +526,7 @@ def listar_dentistas():
                 conn.close()
             except Exception:
                 pass
-    etag = (
-        f"{int(os.path.getmtime(db_path)) if os.path.exists(db_path) else 0}"
-        f":{len(dentists)}"
-    )
+    etag = f"{int(os.path.getmtime(db_path)) if os.path.exists(db_path) else 0}" f":{len(dentists)}"
     inm = request.headers.get("If-None-Match")
     headers = {"Cache-Control": "public, max-age=300", "ETag": etag}
     if inm and inm == etag:
@@ -629,20 +582,13 @@ def buscar_telefone():
         conn = sqlite3.connect(_db_path("pacientes.db"))
         cursor = conn.cursor()
         cursor.execute(
-            (
-                "SELECT celular FROM pacientes WHERE LOWER(nome) = LOWER(?) "
-                "LIMIT 1"
-            ),
+            ("SELECT celular FROM pacientes WHERE LOWER(nome) = LOWER(?) " "LIMIT 1"),
             (nome,),
         )
         result = cursor.fetchone()
         if not result:
             cursor.execute(
-                (
-                    "SELECT celular FROM pacientes "
-                    "WHERE LOWER(nome) LIKE LOWER(?) "
-                    "LIMIT 1"
-                ),
+                ("SELECT celular FROM pacientes " "WHERE LOWER(nome) LIKE LOWER(?) " "LIMIT 1"),
                 (f"%{nome}%",),
             )
             result = cursor.fetchone()
@@ -777,26 +723,12 @@ def holidays_in_range():
     key = (start, end)
     now = _utcnow()
     cached = _HOLIDAYS_RANGE_CACHE.get(key)
-    cached_at = (
-        _ensure_aware_utc(cached.get("at") if cached else None)
-        if cached
-        else None
-    )
-    if (
-        cached
-        and cached_at
-        and (now - cached_at) <= timedelta(seconds=_HOLIDAYS_TTL_SECONDS)
-    ):
+    cached_at = _ensure_aware_utc(cached.get("at") if cached else None) if cached else None
+    if cached and cached_at and (now - cached_at) <= timedelta(seconds=_HOLIDAYS_TTL_SECONDS):
         resp = jsonify(cached.get("data", []))
-        resp.headers["Cache-Control"] = (
-            f"public, max-age={_HOLIDAYS_TTL_SECONDS}"
-        )
+        resp.headers["Cache-Control"] = f"public, max-age={_HOLIDAYS_TTL_SECONDS}"
         return resp
-    rows = (
-        Holiday.query.filter(Holiday.date >= start)
-        .filter(Holiday.date <= end)
-        .all()
-    )
+    rows = Holiday.query.filter(Holiday.date >= start).filter(Holiday.date <= end).all()
     data = [h.to_dict() for h in rows]
     _HOLIDAYS_RANGE_CACHE[key] = {"data": data, "at": now}
     resp = jsonify(data)
@@ -816,20 +748,10 @@ def holidays_by_year():
         return jsonify([])
     now = _utcnow()
     cached = _HOLIDAYS_YEAR_CACHE.get(year)
-    cached_at = (
-        _ensure_aware_utc(cached.get("at") if cached else None)
-        if cached
-        else None
-    )
-    if (
-        cached
-        and cached_at
-        and (now - cached_at) <= timedelta(seconds=_HOLIDAYS_TTL_SECONDS)
-    ):
+    cached_at = _ensure_aware_utc(cached.get("at") if cached else None) if cached else None
+    if cached and cached_at and (now - cached_at) <= timedelta(seconds=_HOLIDAYS_TTL_SECONDS):
         resp = jsonify(cached.get("data", []))
-        resp.headers["Cache-Control"] = (
-            f"public, max-age={_HOLIDAYS_TTL_SECONDS}"
-        )
+        resp.headers["Cache-Control"] = f"public, max-age={_HOLIDAYS_TTL_SECONDS}"
         return resp
     rows = Holiday.query.filter(Holiday.year == year).all()
     data = [h.to_dict() for h in rows]

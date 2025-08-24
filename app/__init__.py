@@ -182,9 +182,11 @@ def create_app() -> Flask:
         """
         try:
             import os
+
             config_path = os.path.join("config", "ai_settings.json")
             if os.path.exists(config_path):
                 import json
+
                 with open(config_path, "r", encoding="utf-8") as f:
                     settings = json.load(f)
                 ai_enabled = settings.get("ai_enabled", False)
@@ -196,6 +198,7 @@ def create_app() -> Flask:
     @app.context_processor
     def inject_endpoint_utils() -> dict:
         """Expose a helper to check if a Flask endpoint exists."""
+
         def endpoint_exists(name: str) -> bool:
             try:
                 return name in app.view_functions

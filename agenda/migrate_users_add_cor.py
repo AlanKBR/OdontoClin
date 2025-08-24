@@ -1,9 +1,7 @@
 import os
 import sqlite3
 
-USERS_DB = os.path.join(
-    os.path.dirname(__file__), os.pardir, "instance", "users.db"
-)
+USERS_DB = os.path.join(os.path.dirname(__file__), os.pardir, "instance", "users.db")
 USERS_DB = os.path.abspath(USERS_DB)
 
 if os.path.exists(USERS_DB):
