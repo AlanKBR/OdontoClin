@@ -221,6 +221,18 @@
                                         <span class="menu-text">Receitas</span>
                                     </a>
                                 </li>
+                                {% if endpoint_exists('agenda.index') %}
+                                <li class="menu-item">
+                                    <a href="{{ url_for('agenda.index') }}"
+                                       class="menu-link {% if request.endpoint.startswith('agenda.') %}active{% endif %}"
+                                       data-tooltip="Agenda">
+                                        <span class="menu-icon">
+                                            <i class="bi bi-calendar3"></i>
+                                        </span>
+                                        <span class="menu-text">Agenda</span>
+                                    </a>
+                                </li>
+                                {% endif %}
                                 <li class="menu-item">
                                     <a href="{{ url_for("atestados.gerar_atestado") }}"
                                        class="menu-link {% if request.endpoint.startswith('atestados.') %}active{% endif %}"

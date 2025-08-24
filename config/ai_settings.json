@@ -1,6 +1,6 @@
 {
   "ai_enabled": true,
-  "model_name": "Lucy-in-the-Sky/Qwen2.5-1.5B-Instruct-Q6_K-GGUF",
+  "model_name": "mradermacher/BioMistral-7B-i1-GGUF",
   "max_tokens": 2048,
   "temperature": 0.2,
   "request_timeout": 30,
@@ -53,6 +53,6 @@
     "medical_disclaimer": false
   },
   "processing_method": "cpu",
-  "selected_model": "Lucy-in-the-Sky/Qwen2.5-1.5B-Instruct-Q6_K-GGUF",
+  "selected_model": "mradermacher/BioMistral-7B-i1-GGUF",
   "provider_change": true
 }

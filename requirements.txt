@@ -15,3 +15,7 @@ openai           # Integração com API OpenAI
 llama-cpp-python # Suporte a modelos GGUF (AI local)
 psutil           # Monitoramento de recursos do sistema
 huggingface-hub[hf_xet] # Download de modelos AI via Hugging Face
+python-dotenv    # Carregar variáveis de ambiente de .env (opcional)
+pyngrok          # Túnel ngrok para expor o servidor local
+reportlab        # Geração de PDFs para módulo de atestados
+python-dateutil  # Parse de datas usado pela Agenda

@@ -709,7 +709,7 @@
                             </button>
                             <div class="action-button keyboard-hint">
                                 <i class="fas fa-keyboard"></i>
-                                Ctrl + Enter para enviar
+                                Enter para enviar, Shift+Enter para nova linha
                             </div>
                         </div>
                     </form>
@@ -745,11 +745,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Send on Ctrl+Enter
+    // Enviar com Enter, nova linha com Shift+Enter
     chatInput.addEventListener('keydown', function(e) {
-        if (e.ctrlKey && e.key === 'Enter') {
+        if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             sendMessage();
         }
+        // Shift+Enter: comportamento padrão (nova linha)
     });
     
     // Clear history

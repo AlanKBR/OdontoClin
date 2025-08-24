@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}
     {{ paciente.nome }} | OdontoClinic
-{% endblock title %}
+{% endblock %}
 {% block extra_css %}
     <style nonce="{{ csp_nonce() }}">
     .nav-tabs .nav-link {
@@ -32,7 +32,7 @@
         margin-bottom: 20px;
     }
     </style>
-{% endblock extra_css %}
+{% endblock %}
 {% block content %}
     <div class="container-fluid py-4">
         <nav aria-label="breadcrumb">
@@ -199,7 +199,7 @@
                         </div>
                     </div>
                 </div>
-            {% endblock content %}
+            {% endblock %}
         </div>
     </div>
     <!-- Modal de confirmação de exclusão -->
@@ -247,5 +247,5 @@
         }
     });
         </script>
-    {% endblock extra_js %}
-{% endblock content %}
+{% endblock %}
+{% endblock %}

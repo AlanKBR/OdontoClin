@@ -4,7 +4,7 @@ from datetime import date, datetime, timezone  # Add timezone
 from typing import Union  # Add Union for Python < 3.10 compatibility if needed
 
 from flask import Flask, render_template
-from markupsafe import Markup
+from markupsafe import Markup, escape
 
 from app.models.user import User
 
@@ -110,6 +110,30 @@ def create_app() -> Flask:
         ai_assistant_bp, url_prefix="/ai"
     )  # Registro do blueprint de IA com lazy loading
 
+    # Integra o módulo de Agenda (calendário) como um blueprint em /agenda
+    # Preferimos registrar o blueprint diretamente; se falhar, tentamos via init_agenda.
+    try:
+        from agenda.db import db as agenda_db  # type: ignore
+        from agenda.routes import bp as agenda_bp  # type: ignore
+
+        agenda_db.init_app(app)
+        app.register_blueprint(agenda_bp, url_prefix="/agenda")
+        with app.app_context():
+            try:
+                agenda_db.create_all()
+            except Exception:
+                pass
+    except Exception:
+        try:
+            from agenda import init_agenda  # type: ignore
+
+            init_agenda(app, url_prefix="/agenda", auto_create_db=True)
+        except Exception as ex:
+            try:
+                app.logger.exception("Falha ao inicializar Agenda: %s", ex)
+            except Exception:
+                print("Falha ao inicializar Agenda:", ex)
+
     # Custom Jinja filter for date formatting
     def format_date_filter(value: Union[datetime, date], format: str = "%d/%m/%Y") -> str:
         if value and isinstance(value, (datetime, date)):
@@ -117,6 +141,14 @@ def create_app() -> Flask:
         return str(value)
 
     app.jinja_env.filters["date"] = format_date_filter
+
+    # Custom Jinja filter to convert newlines to <br>
+    def nl2br(value: str) -> str:
+        if not value:
+            return ""
+        return Markup(escape(value).replace("\n", "<br>"))
+
+    app.jinja_env.filters["nl2br"] = nl2br
 
     @app.context_processor
     def inject_now() -> dict[str, datetime]:
@@ -149,13 +181,10 @@ def create_app() -> Flask:
         Checks if AI is enabled and working without heavy imports.
         """
         try:
-            # Check if AI is enabled in config
             import os
-
             config_path = os.path.join("config", "ai_settings.json")
             if os.path.exists(config_path):
                 import json
-
                 with open(config_path, "r", encoding="utf-8") as f:
                     settings = json.load(f)
                 ai_enabled = settings.get("ai_enabled", False)
@@ -163,6 +192,17 @@ def create_app() -> Flask:
             return {"ai_available": False, "ai_can_load": False}
         except Exception:
             return {"ai_available": False, "ai_can_load": False}
+
+    @app.context_processor
+    def inject_endpoint_utils() -> dict:
+        """Expose a helper to check if a Flask endpoint exists."""
+        def endpoint_exists(name: str) -> bool:
+            try:
+                return name in app.view_functions
+            except Exception:
+                return False
+
+        return {"endpoint_exists": endpoint_exists}
 
     @login_manager.user_loader
     def load_user(user_id: str) -> Union[User, None]:  # Assuming User model or None

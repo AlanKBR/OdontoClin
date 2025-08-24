@@ -275,11 +275,15 @@ def gerar_pdf(documento_id):
             else:
                 dados_template[f"{nome_campo}_texto"] = ""
 
-        # Preencher template
+        # Preencher template usando Jinja2
+        from flask import render_template_string
+        from markupsafe import escape
+        # Sanitizar todos os dados do template
+        safe_context = {k: escape(str(v)) for k, v in dados_template.items()}
         try:
-            conteudo_final = template.format(**dados_template)
-        except KeyError as e:
-            current_app.logger.warning(f"Chave não encontrada no template: {e}")
+            conteudo_final = render_template_string(template, **safe_context)
+        except Exception as e:
+            current_app.logger.warning(f"Erro ao renderizar template Jinja2: {e}")
             conteudo_final = template
 
         elementos.append(Paragraph(conteudo_final, normal_style))
@@ -428,11 +432,15 @@ def gerar_html(documento_id):
             else:
                 dados_template[f"{nome_campo}_texto"] = ""
 
-        # Preencher template
+        # Preencher template usando Jinja2
+        from flask import render_template_string
+        from markupsafe import escape
+        # Sanitizar todos os dados do template
+        safe_context = {k: escape(str(v)) for k, v in dados_template.items()}
         try:
-            conteudo_final = template.format(**dados_template)
-        except KeyError as e:
-            current_app.logger.warning(f"Chave não encontrada no template: {e}")
+            conteudo_final = render_template_string(template, **safe_context)
+        except Exception as e:
+            current_app.logger.warning(f"Erro ao renderizar template Jinja2: {e}")
             conteudo_final = template
 
         # Renderizar template HTML

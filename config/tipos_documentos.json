@@ -36,7 +36,7 @@
           "obrigatorio": false
         }
       ],
-      "template": "Eu, {nome_paciente}, portador(a) do CPF {cpf_paciente}, AUTORIZO o(a) Dr(a). {nome_dentista}, CRO {cro_dentista}, a utilizar minha imagem para {finalidade}, pelo período de {periodo_autorizacao}. {restricoes_texto}"
+      "template": "Eu, {{ nome_paciente }}, portador(a) do CPF {{ cpf_paciente }}, AUTORIZO o(a) Dr(a). {{ nome_dentista }}, CRO {{ cro_dentista }}, a utilizar minha imagem para {{ finalidade }}, pelo período de {{ periodo_autorizacao }}.{% if restricoes_texto %} {{ restricoes_texto }}{% endif %}"
     },
     "interrupcao_tratamento_paciente": {
       "titulo": "Comunicado de Interrupção de Tratamento (Paciente)",
@@ -68,7 +68,7 @@
           "obrigatorio": false
         }
       ],
-      "template": "Declaro que o(a) paciente {nome_paciente}, CPF {cpf_paciente}, comunicou sua decisão de interromper o tratamento odontológico por {motivo_interrupcao}. Tratamento realizado até a data: {tratamento_realizado}. {recomendacoes_texto}"
+      "template": "Declaro que o(a) paciente {{ nome_paciente }}, CPF {{ cpf_paciente }}, comunicou sua decisão de interromper o tratamento odontológico por {{ motivo_interrupcao }}. Tratamento realizado até a data: {{ tratamento_realizado }}.{% if recomendacoes_texto %} {{ recomendacoes_texto }}{% endif %}"
     },
     "interrupcao_tratamento_responsavel": {
       "titulo": "Comunicado de Interrupção de Tratamento (Responsável)",
@@ -112,7 +112,7 @@
           "obrigatorio": true
         }
       ],
-      "template": "Declaro que o(a) responsável {nome_responsavel} ({parentesco}) do(a) paciente {nome_paciente}, comunicou a decisão de interromper o tratamento odontológico por {motivo_interrupcao}. Tratamento realizado até a data: {tratamento_realizado}."
+      "template": "Declaro que o(a) responsável {{ nome_responsavel }} ({{ parentesco }}) do(a) paciente {{ nome_paciente }}, comunicou a decisão de interromper o tratamento odontológico por {{ motivo_interrupcao }}. Tratamento realizado até a data: {{ tratamento_realizado }}."
     },
     "solicitacao_exames": {
       "titulo": "Solicitação de Exames Laboratoriais",
@@ -151,7 +151,7 @@
           "obrigatorio": true
         }
       ],
-      "template": "Solicito os seguintes exames para o(a) paciente {nome_paciente}: {tipos_exames}. Indicação clínica: {indicacao_clinica}. Urgência: {urgencia}."
+      "template": "Solicito os seguintes exames para o(a) paciente {{ nome_paciente }}: {{ tipos_exames }}. Indicação clínica: {{ indicacao_clinica }}. Urgência: {{ urgencia }}."
     },
     "encaminhamento": {
       "titulo": "Encaminhamento Médico/Odontológico",
@@ -192,7 +192,7 @@
           "obrigatorio": true
         }
       ],
-      "template": "Encaminho o(a) paciente {nome_paciente} para avaliação em {especialidade_destino}. Motivo: {motivo_encaminhamento}. Urgência: {urgencia_encaminhamento}."
+      "template": "Encaminho o(a) paciente {{ nome_paciente }} para avaliação em {{ especialidade_destino }}. Motivo: {{ motivo_encaminhamento }}. Urgência: {{ urgencia_encaminhamento }}."
     },
     "instrucoes_pos_operatorias": {
       "titulo": "Instruções Pós-Operatórias",
@@ -239,7 +239,7 @@
           "obrigatorio": true
         }
       ],
-      "template": "Após o procedimento de {procedimento_realizado}, o(a) paciente {nome_paciente} deve seguir as seguintes orientações: {cuidados_especiais}. {medicamentos_texto} Retorno: {retorno}."
+      "template": "Após o procedimento de {{ procedimento_realizado }}, o(a) paciente {{ nome_paciente }} deve seguir as seguintes orientações: {{ cuidados_especiais }}.{% if medicamentos_texto %} {{ medicamentos_texto }}{% endif %} Retorno: {{ retorno }}."
     },
     "contrato_tratamento": {
       "titulo": "Contrato de Tratamento Odontológico",
@@ -284,7 +284,7 @@
           "obrigatorio": false
         }
       ],
-      "template": "Contrato de prestação de serviços odontológicos entre Dr(a). {nome_dentista} e o(a) paciente {nome_paciente}. Tratamento: {tratamento_proposto}. Valor: {valor_total}. Pagamento: {forma_pagamento}. Prazo: {prazo_tratamento}. {garantia_texto}"
+      "template": "Contrato de prestação de serviços odontológicos entre Dr(a). {{ nome_dentista }} e o(a) paciente {{ nome_paciente }}. Tratamento: {{ tratamento_proposto }}. Valor: {{ valor_total }}. Pagamento: {{ forma_pagamento }}. Prazo: {{ prazo_tratamento }}.{% if garantia_texto %} {{ garantia_texto }}{% endif %}"
     }
   }
 }

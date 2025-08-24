@@ -7,11 +7,24 @@ import secrets
 from datetime import timezone
 from typing import Callable
 
-# Import the application factory function
+from markupsafe import Markup, escape
 from app import create_app  # pylint: disable=import-self
+
+
+def nl2br(value: str) -> str:
+    """
+    Converte quebras de linha (\n) em <br> para exibição segura em HTML.
+    """
+    if not value:
+        return ""
+    return Markup(escape(value).replace("\n", "<br>"))
+
 
 # Create the application instance
 app = create_app()
+
+# Registrar o filtro no Jinja2 imediatamente após criar o app
+app.jinja_env.filters["nl2br"] = nl2br
 
 
 @app.context_processor
