@@ -2,7 +2,7 @@
 Módulo com rotas relacionadas a receitas médicas.
 """
 
-from flask import Blueprint, Response, flash, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user
 
 from app.decorators import debug_login_optional
@@ -16,7 +16,7 @@ receitas = Blueprint("receitas", __name__)
 
 @receitas.route("/")
 @debug_login_optional
-def index() -> Response:
+def index():
     """Página principal de receitas."""
     clinica = Clinica.get_instance()
     return render_template("receitas/index.html", clinica=clinica)
@@ -24,11 +24,15 @@ def index() -> Response:
 
 @receitas.route("/nova")
 @debug_login_optional
-def nova_receita() -> Response:
+def nova_receita():
     """Página para criar nova receita."""
     pacientes = Paciente.query.order_by(Paciente.nome).all()
 
-    dentistas = User.query.filter_by(cargo="dentista").all()
+    # Somente dentistas ativos
+    from app.extensions import db as _db
+    dentistas = (
+        User.query.filter_by(cargo="dentista").filter(User.is_active_db == _db.true()).all()
+    )
     clinica = Clinica.get_instance()
     return render_template(
         "receitas/formulario_receita.html",
@@ -40,7 +44,7 @@ def nova_receita() -> Response:
 
 @receitas.route("/medicamentos")
 @debug_login_optional
-def listar_medicamentos() -> Response:
+def listar_medicamentos():
     """Lista todos os medicamentos cadastrados."""
     medicamentos = Medicamento.query.order_by(Medicamento.principio_ativo).all()
     return render_template("receitas/lista_medicamentos.html", medicamentos=medicamentos)
@@ -48,7 +52,7 @@ def listar_medicamentos() -> Response:
 
 @receitas.route("/medicamentos/<int:medicamento_id>")
 @debug_login_optional
-def visualizar_medicamento(medicamento_id: int) -> Response:
+def visualizar_medicamento(medicamento_id: int):
     """Visualiza detalhes de um medicamento específico."""
     medicamento = Medicamento.query.get_or_404(medicamento_id)
 
@@ -77,7 +81,7 @@ def visualizar_medicamento(medicamento_id: int) -> Response:
 
 @receitas.route("/medicamentos/todos", methods=["GET"])
 @debug_login_optional
-def obter_todos_medicamentos() -> Response:
+def obter_todos_medicamentos():
     """Obtém todos os medicamentos para busca instantânea no frontend."""
     medicamentos = Medicamento.query.order_by(Medicamento.principio_ativo).all()
 
@@ -110,7 +114,7 @@ def obter_todos_medicamentos() -> Response:
 
 @receitas.route("/medicamentos/buscar", methods=["GET"])
 @debug_login_optional
-def buscar_medicamentos() -> Response:
+def buscar_medicamentos():
     """Busca medicamentos por qualquer campo relevante da tabela."""
     termo = request.args.get("termo", "")
     if termo:
@@ -160,7 +164,7 @@ def buscar_medicamentos() -> Response:
 
 @receitas.route("/modelos")
 @debug_login_optional
-def listar_modelos() -> Response:
+def listar_modelos():
     """Lista todos os modelos de receita do usuário atual."""
     try:
         # Usar a sessão do banco de receitas através do multidb
@@ -186,7 +190,7 @@ def listar_modelos() -> Response:
 
 @receitas.route("/modelos/salvar", methods=["POST"])
 @debug_login_optional
-def salvar_modelo() -> Response:
+def salvar_modelo():
     """Salva um novo modelo de receita."""
     titulo = request.form.get("titulo")
     conteudo = request.form.get("conteudo")
@@ -202,8 +206,8 @@ def salvar_modelo() -> Response:
         if receitas_session:
             # Criar o modelo usando o construtor padrão do SQLAlchemy
             modelo = ModeloReceita()
-            modelo.titulo = titulo
-            modelo.conteudo = conteudo
+            modelo.titulo = titulo  # type: ignore[assignment]
+            modelo.conteudo = conteudo  # type: ignore[assignment]
             modelo.usuario_id = current_user.id
 
             receitas_session.add(modelo)
@@ -220,7 +224,7 @@ def salvar_modelo() -> Response:
 
 @receitas.route("/modelos/<int:modelo_id>/visualizar")
 @debug_login_optional
-def visualizar_modelo(modelo_id: int) -> Response:
+def visualizar_modelo(modelo_id: int):
     """Visualiza um modelo de receita."""
     try:
         from app.multidb import multidb
@@ -261,7 +265,7 @@ def visualizar_modelo(modelo_id: int) -> Response:
 
 @receitas.route("/modelos/<int:modelo_id>/excluir", methods=["POST"])
 @debug_login_optional
-def excluir_modelo(modelo_id: int) -> Response:
+def excluir_modelo(modelo_id: int):
     """Exclui um modelo de receita."""
     try:
         from app.multidb import multidb
@@ -294,7 +298,12 @@ def excluir_modelo(modelo_id: int) -> Response:
 def obter_dados_dentista_receita(dentista_id: int):
     """API para obter dados básicos do dentista para uso em receitas."""
     try:
-        dentista = User.query.filter_by(id=dentista_id, cargo="dentista").first()
+        from app.extensions import db as _db
+        dentista = (
+            User.query.filter_by(id=dentista_id, cargo="dentista")
+            .filter(User.is_active_db == _db.true())
+            .first()
+        )
         if not dentista:
             return jsonify({"error": "Dentista não encontrado"}), 404
 

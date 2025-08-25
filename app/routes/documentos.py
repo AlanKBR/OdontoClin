@@ -12,6 +12,7 @@ from flask import (
     send_file,
     url_for,
 )
+from flask.typing import ResponseReturnValue
 from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -41,7 +42,7 @@ def carregar_tipos_documentos():
 
 @documentos_bp.route("/")
 @debug_login_optional
-def index():
+def index() -> ResponseReturnValue:
     """Página principal mostrando tipos de documentos disponíveis."""
     tipos = carregar_tipos_documentos()
     return render_template(
@@ -49,9 +50,9 @@ def index():
     )
 
 
-@documentos_bp.route("/gerar/<tipo_documento>", methods=["GET", "POST"])
+@documentos_bp.route("/gerar/<string:tipo_documento>", methods=["GET", "POST"])
 @debug_login_optional
-def gerar_documento(tipo_documento):
+def gerar_documento(tipo_documento: str) -> ResponseReturnValue:
     """Gera um documento específico baseado no tipo."""
     tipos = carregar_tipos_documentos()
 
@@ -65,8 +66,14 @@ def gerar_documento(tipo_documento):
         # Buscar todos os pacientes
         pacientes = Paciente.query.order_by(Paciente.nome).all()
 
-        # Buscar todos os dentistas
-        dentistas = User.query.filter_by(cargo="dentista").order_by(User.nome_completo).all()
+        # Buscar todos os dentistas ativos
+        from app.extensions import db as _db
+        dentistas = (
+            User.query.filter_by(cargo="dentista")
+            .filter(User.is_active_db == _db.true())
+            .order_by(User.nome_completo)
+            .all()
+        )
 
         # Verificar se o usuário logado é dentista para pré-seleção
         from flask_login import current_user
@@ -159,12 +166,15 @@ def gerar_documento(tipo_documento):
             db.session.rollback()
             current_app.logger.error(f"Erro ao gerar documento: {e}")
             flash("Erro interno. Tente novamente.", "error")
-            return redirect(request.url)
+        return redirect(request.url)
+
+    # Fallback: ensure a ResponseReturnValue on all code paths
+    return redirect(url_for("documentos.index"))
 
 
 @documentos_bp.route("/pdf/<int:documento_id>")
 @debug_login_optional
-def gerar_pdf(documento_id):
+def gerar_pdf(documento_id) -> ResponseReturnValue:
     """Gera o PDF do documento."""
     documento = Documento.query.get_or_404(documento_id)
 
@@ -358,7 +368,7 @@ def gerar_pdf(documento_id):
 
 @documentos_bp.route("/historico")
 @debug_login_optional
-def historico():
+def historico() -> ResponseReturnValue:
     """Mostra o histórico de documentos gerados."""
     documentos = Documento.query.order_by(Documento.data_emissao.desc()).limit(100).all()
     return render_template("documentos/historico_documentos.html", documentos=documentos)
@@ -366,7 +376,7 @@ def historico():
 
 @documentos_bp.route("/html/<int:documento_id>")
 @debug_login_optional
-def gerar_html(documento_id):
+def gerar_html(documento_id) -> ResponseReturnValue:
     """Gera o HTML do documento para visualização/impressão."""
     documento = Documento.query.get_or_404(documento_id)
 

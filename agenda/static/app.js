@@ -2,7 +2,7 @@
 /* global FullCalendar, flatpickr, bootstrap, applyClientSearchFilter, Intl */
 /* eslint no-empty: ["error", { "allowEmptyCatch": true }] */
 
-document.addEventListener('DOMContentLoaded', function () {
+function __initAgendaApp() {
     const BASE = (typeof window !== 'undefined' && window.__AGENDA_BASE__) ? window.__AGENDA_BASE__ : '';
     const staticBase = BASE + '/static';
     Promise.all([
@@ -506,21 +506,31 @@ document.addEventListener('DOMContentLoaded', function () {
             } catch (e) { }
         }
 
-        function fetchDentistsOnce() {
-            // If already in memory, resolve immediately
-            if (dentistsCache.list && dentistsCache.list.length) {
+        function fetchDentistsOnce(force = false) {
+            // If not forcing and already in memory, resolve immediately
+            if (!force && dentistsCache.list && dentistsCache.list.length) {
                 return Promise.resolve(dentistsCache.list);
             }
-            // Try storage cache
-            const fromStorage = loadDentistsFromStorage();
-            if (fromStorage) {
-                dentistsCache.list = fromStorage.map(d => ({ id: Number(d.id), nome: d.nome, color: d.color || null }));
-                dentistsCache.map = Object.fromEntries(dentistsCache.list.map(d => [d.id, d]));
-                return Promise.resolve(dentistsCache.list);
+            // Try storage cache unless forcing
+            if (!force) {
+                const fromStorage = loadDentistsFromStorage();
+                if (fromStorage) {
+                    dentistsCache.list = fromStorage.map(d => ({ id: Number(d.id), nome: d.nome, color: d.color || null }));
+                    dentistsCache.map = Object.fromEntries(dentistsCache.list.map(d => [d.id, d]));
+                    return Promise.resolve(dentistsCache.list);
+                }
             }
             if (dentistsPending) return dentistsPending;
-            dentistsPending = fetch(BASE + '/dentists')
-                .then(r => r.json())
+            const url = BASE + '/dentists' + (force ? (`?_t=${Date.now()}`) : '');
+            const fetchOpts = force ? { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } } : {};
+            dentistsPending = fetch(url, fetchOpts)
+                .then(r => {
+                    if (r.status === 304) {
+                        // Not modified; return what we have (or empty)
+                        return dentistsCache.list || [];
+                    }
+                    return r.json();
+                })
                 .then(list => {
                     const norm = Array.isArray(list) ? list.map(d => ({
                         id: Number(d.id),
@@ -529,7 +539,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     })) : [];
                     dentistsCache.list = norm;
                     dentistsCache.map = Object.fromEntries(norm.map(d => [d.id, d]));
-                    saveDentistsToStorage(norm);
+                    try { saveDentistsToStorage(norm); } catch (e) { }
                     // If no saved selection, default to all dentists to avoid empty results on first load
                     try {
                         const saved = loadSelectedDentists();
@@ -885,23 +895,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Outras visões: padrão
                 return undefined;
             },
-            events: function (fetchInfo, success, failure) {
+        events: function (fetchInfo, success, failure) {
                 try {
                     const key = buildCacheKey();
-                    // Always fetch a month (±7 days). If mini set an override, use its month; else use fetchInfo.start
-                    const override = (typeof window !== 'undefined') ? window.__fetchMonthOverride : null;
-                    const focus = (override && override.start) ? new Date(override.start) : new Date(fetchInfo.start);
-                    const monthStart = new Date(focus.getFullYear(), focus.getMonth(), 1);
-                    const monthEnd = (override && override.end)
-                        ? new Date(override.end)
-                        : new Date(focus.getFullYear(), focus.getMonth() + 1, 1);
-                    const padStart = new Date(monthStart);
-                    padStart.setDate(padStart.getDate() - 7);
-                    const padEnd = new Date(monthEnd);
-                    padEnd.setDate(padEnd.getDate() + 7);
-                    const covStart = startOfDay(padStart);
-                    const covEnd = startOfDay(padEnd);
-                    const dedupKey = `${key}|${covStart.toISOString()}|${covEnd.toISOString()}`;
+            // Fetch the actual visible range for the current view, with a small pad
+            const vs = new Date(fetchInfo.start);
+            const ve = new Date(fetchInfo.end);
+            const padStart = new Date(vs);
+            padStart.setDate(padStart.getDate() - 2);
+            const padEnd = new Date(ve);
+            padEnd.setDate(padEnd.getDate() + 2);
+            const covStart = startOfDay(padStart);
+            const covEnd = startOfDay(padEnd);
+            // Use only dates for de-duplication here; avoid referencing `calendar` before init
+            const dedupKey = `${key}|${covStart.toISOString()}|${covEnd.toISOString()}`;
                     // If cache covers this padded month, just serve the requested subrange
                     if (cacheCoversRange(padStart, padEnd, key)) {
                         const result = eventsFromCache(new Date(fetchInfo.start), new Date(fetchInfo.end), key);
@@ -925,7 +932,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             });
                         return;
                     }
-                    // Build query params for padded month
+                    // Build query params for padded visible range
                     const ids = loadSelectedDentists();
                     const includeUn = loadIncludeUnassigned();
                     const q = loadSearchQuery();
@@ -2509,7 +2516,46 @@ document.addEventListener('DOMContentLoaded', function () {
                         .catch(() => { /* keep serverCleared=false */ })
                         .finally(() => {
                             // 3) Rebuild UI data
-                            try { fetchDentistsOnce().then(list => renderDentistsSidebar(list)); } catch (e) { }
+                            try {
+                                fetchDentistsOnce(true).then(list => {
+                                    // Sanitize persisted selection to valid dentists only
+                                    try {
+                                        const valid = new Set((Array.isArray(list) ? list : []).map(d => Number(d.id)));
+                                        let selected = (loadSelectedDentists() || []).map(Number).filter(id => valid.has(id));
+                                        // If nothing remains selected, default to all current valid dentists
+                                        if (!selected || selected.length === 0) {
+                                            selected = (Array.isArray(list) ? list : []).map(d => Number(d.id));
+                                        }
+                                        saveSelectedDentists(selected);
+                                    } catch (e) { }
+                                    // Rebuild popover select options to reflect valid dentists
+                                    try {
+                                        const sel = document.getElementById('popoverDentist');
+                                        if (sel) {
+                                            // Remove all options except the empty one
+                                            for (let i = sel.options.length - 1; i >= 0; i--) {
+                                                const opt = sel.options[i];
+                                                if (opt && opt.value !== '') sel.remove(i);
+                                            }
+                                            (Array.isArray(list) ? list : []).forEach(d => {
+                                                const opt = document.createElement('option');
+                                                opt.value = String(d.id);
+                                                opt.textContent = d.nome || String(d.id);
+                                                sel.appendChild(opt);
+                                            });
+                                            const selected = loadSelectedDentists();
+                                            if (selected && selected.length === 1) sel.value = String(selected[0]);
+                                            else sel.value = '';
+                                        }
+                                    } catch (e) { }
+                                    // Re-render sidebar and notices
+                                    try { renderDentistsSidebar(Array.isArray(list) ? list : []); } catch (e) { }
+                                    try { updateEmptyFilterNoticeDeb(); } catch (e) { }
+                                    // Keep mini calendar in sync
+                                    try { if (window.__miniCalendar) window.__miniCalendar.refetchEvents(); } catch (e) { }
+                                    try { if (window.__rebuildMiniIndicators) window.__rebuildMiniIndicators(); } catch (e) { }
+                                });
+                            } catch (e) { }
                             try { calendar.refetchEvents(); } catch (e) { }
                             try { if (window.__miniCalendar) window.__miniCalendar.refetchEvents(); } catch (e) { }
                             try { if (typeof updateHolidaysForCurrentView === 'function') updateHolidaysForCurrentView(); } catch (e) { }
@@ -2619,4 +2665,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
-});
+}
+    // Ensure initialization runs even if this script is loaded after DOMContentLoaded
+    // (template includes app.js at the end of the body). If DOM is already ready, run now.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', __initAgendaApp);
+    } else {
+        __initAgendaApp();
+    }

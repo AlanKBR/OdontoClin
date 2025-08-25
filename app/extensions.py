@@ -1,15 +1,16 @@
 from flask_login import LoginManager
 from flask_mobility import Mobility
 from flask_sqlalchemy import SQLAlchemy
+from typing import Any
 
 # Definição das extensões
 db = SQLAlchemy()
 login_manager = LoginManager()
 mobility = Mobility()
 
-# Estas variáveis serão atualizadas com as sessões específicas após inicialização
-# Isto permite que o código existente continue funcionando com mínimas modificações
-users_db = None
-pacientes_db = None
-tratamentos_db = None
-receitas_db = None
+# Estas variáveis serão atualizadas com as sessões específicas após inicialização.
+# Anotadas como Any para evitar falsos positivos do analisador estático antes da inicialização do app.
+users_db: Any = None
+pacientes_db: Any = None
+tratamentos_db: Any = None
+receitas_db: Any = None

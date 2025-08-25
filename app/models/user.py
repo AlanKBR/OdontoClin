@@ -18,6 +18,8 @@ class User(UserMixin, db.Model):
     nome_profissional = db.Column(db.String(120), nullable=False)  # Professional name field
     password_hash = db.Column(db.String(256))  # Aumentado para 256
     cargo = db.Column(db.String(50), nullable=False, default="dentista")  # Novo campo para cargo
+    # Backing column for activation state (stored as 'is_active' in DB)
+    is_active_db = db.Column("is_active", db.Boolean, default=True, nullable=True)
 
     def __init__(
         self,
@@ -48,3 +50,13 @@ class User(UserMixin, db.Model):
 
     def __repr__(self) -> str:
         return f"<User {self.username}>"
+
+    # Flask-Login compatibility: provide read/write property
+    @property
+    def is_active(self) -> bool:  # type: ignore[override]
+        # Treat NULL as active for backward compatibility
+        return True if self.is_active_db is None else bool(self.is_active_db)
+
+    @is_active.setter
+    def is_active(self, value: bool) -> None:
+        self.is_active_db = bool(value)

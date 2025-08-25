@@ -24,6 +24,7 @@ bp = Blueprint(
 
 # Models colocados aqui para manter o módulo autocontido
 class CalendarEvent(db.Model):
+    __bind_key__ = "calendario"
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(120), nullable=False)
     start = db.Column(db.String(30), nullable=False)
@@ -78,6 +79,7 @@ class AppSetting(db.Model):
 
 
 class Holiday(db.Model):
+    __bind_key__ = "calendario"
     __tablename__ = "holidays"
     date = db.Column(db.String(10), primary_key=True)
     name = db.Column(db.String(200), nullable=False)
@@ -222,6 +224,57 @@ def _apply_query_filters(base_query, query_text: str):
     col_notes = getattr(CalendarEvent, "notes")
     title_match = col_title.ilike(like)
     notes_match = col_notes.ilike(like)
+    # Optional: match color by words (e.g., "vermelho") or hex (e.g., "#ff0000")
+
+    def _color_hexes_for_query(query_text: str) -> list[str]:
+        q = (query_text or "").strip().lower()
+        if not q:
+            return []
+        COLOR_WORDS: dict[str, list[str]] = {
+            "vermelho": ["#e11d48"],
+            "rosa": ["#f43f5e", "#f472b6"],
+            "rosa-claro": ["#f472b6"],
+            "laranja": ["#f59e42"],
+            "amarelo": ["#fbbf24"],
+            "verde": ["#22c55e"],
+            "verde-agua": ["#10b981"],
+            "verde agua": ["#10b981"],
+            "azul": ["#2563eb"],
+            "azul-escuro": ["#2563eb"],
+            "azul escuro": ["#2563eb"],
+            "azul-claro": ["#0ea5e9"],
+            "azul claro": ["#0ea5e9"],
+            "roxo": ["#6366f1"],
+            "lilás": ["#6366f1"],
+            "lilas": ["#6366f1"],
+            "roxo-escuro": ["#a21caf"],
+            "roxo escuro": ["#a21caf"],
+            "púrpura": ["#a21caf"],
+            "purpura": ["#a21caf"],
+            "cinza": ["#64748b"],
+            "grey": ["#64748b"],
+            "grafite": ["#64748b"],
+        }
+        hexes: list[str] = []
+        for word, values in COLOR_WORDS.items():
+            if q == word or word in q:
+                hexes.extend(values)
+        if q.startswith("#") and len(q) in (4, 7):
+            hexes.append(q)
+        # unique
+        seen: set[str] = set()
+        uniq: list[str] = []
+        for h in hexes:
+            if h not in seen:
+                seen.add(h)
+                uniq.append(h)
+        return uniq
+
+    color_hexes = _color_hexes_for_query(qtxt)
+    if color_hexes:
+        col_color = getattr(CalendarEvent, "color")
+        color_match = col_color.in_(color_hexes)
+        return base_query.filter(or_(title_match, notes_match, color_match))
     return base_query.filter(or_(title_match, notes_match))
 
 
@@ -270,7 +323,7 @@ def get_events():
             if include_unassigned:
                 q = q.filter(col_prof.is_(None))
             else:
-                # invalid-only: ids not in users.db and not null
+                # invalid-only: ids not in the set of currently selectable dentists (active + role), and not null
                 db_path = _db_path("users.db")
                 valid_ids: set[int] = set()
                 if os.path.exists(db_path):
@@ -278,7 +331,16 @@ def get_events():
                     try:
                         conn = sqlite3.connect(db_path)
                         cur = conn.cursor()
-                        cur.execute("SELECT id FROM users")
+                        # Determine available columns to apply same filter as /dentists
+                        cur.execute("PRAGMA table_info(users)")
+                        cols = [row[1] for row in cur.fetchall()]
+                        conditions: list[str] = []
+                        if "is_active" in cols:
+                            conditions.append("is_active = 1")
+                        if "cargo" in cols:
+                            conditions.append("cargo IN ('dentista','admin')")
+                        where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
+                        cur.execute(f"SELECT id FROM users{where}")
                         valid_ids = {int(r[0]) for r in cur.fetchall() if r and r[0] is not None}
                     finally:
                         try:
@@ -334,6 +396,7 @@ def events_search_range():
             if include_unassigned:
                 q = q.filter(col_prof.is_(None))
             else:
+                # invalid-only based on active dentists/admins as valid
                 db_path = _db_path("users.db")
                 valid_ids: set[int] = set()
                 if os.path.exists(db_path):
@@ -341,7 +404,15 @@ def events_search_range():
                     try:
                         conn = sqlite3.connect(db_path)
                         cur = conn.cursor()
-                        cur.execute("SELECT id FROM users")
+                        cur.execute("PRAGMA table_info(users)")
+                        cols = [row[1] for row in cur.fetchall()]
+                        conditions: list[str] = []
+                        if "is_active" in cols:
+                            conditions.append("is_active = 1")
+                        if "cargo" in cols:
+                            conditions.append("cargo IN ('dentista','admin')")
+                        where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
+                        cur.execute(f"SELECT id FROM users{where}")
                         valid_ids = {int(r[0]) for r in cur.fetchall() if r and r[0] is not None}
                     finally:
                         try:
@@ -508,7 +579,17 @@ def listar_dentistas():
                 )
                 color_col = "color" if "color" in cols else ("cor" if "cor" in cols else None)
                 sel_cols = ["id", name_col] + ([color_col] if color_col else [])
-                q = "SELECT " f"{', '.join(sel_cols)} " f"FROM users ORDER BY {name_col}"
+                conditions: list[str] = []
+                if "is_active" in cols:
+                    conditions.append("is_active = 1")
+                if "cargo" in cols:
+                    conditions.append("cargo IN ('dentista','admin')")
+                where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
+                q = (
+                    "SELECT "
+                    f"{', '.join(sel_cols)} "
+                    f"FROM users{where} ORDER BY {name_col}"
+                )
                 cur.execute(q)
                 for r in cur.fetchall():
                     did = r[0]

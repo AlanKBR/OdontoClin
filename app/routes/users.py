@@ -13,8 +13,9 @@ users = Blueprint("users", __name__)
 
 # Formulário base com CSRF desabilitado
 class CSRFDisabledForm(FlaskForm):
-    class Meta:
-        csrf = False
+    class Meta(FlaskForm.Meta):  # type: ignore[misc]
+        # Pylance might expect a cached_property; for runtime, WTForms reads a simple flag.
+        csrf = False  # type: ignore[assignment]
 
 
 # Formulário para criar/editar usuário
@@ -73,7 +74,7 @@ def admin_required() -> None:
 
 @users.route("/")
 @debug_login_optional
-def listar_usuarios() -> str:
+def listar_usuarios():
     # Lista todos os usuários
     usuarios = extensions.users_db.query(User).all()
     return render_template("users/lista_usuarios.html", usuarios=usuarios)
@@ -81,7 +82,7 @@ def listar_usuarios() -> str:
 
 @users.route("/novo", methods=["GET", "POST"])
 @debug_login_optional
-def novo_usuario() -> str:
+def novo_usuario():
     admin_required()
     form = UserForm()
 
@@ -131,7 +132,7 @@ def novo_usuario() -> str:
 
 @users.route("/editar/<int:id>", methods=["GET", "POST"])
 @debug_login_optional
-def editar_usuario(id: int) -> str:
+def editar_usuario(id: int):
     admin_required()
     usuario = extensions.users_db.query(User).get(id)
     if usuario is None:
@@ -190,9 +191,35 @@ def editar_usuario(id: int) -> str:
     return render_template("users/formulario_usuario.html", form=form, titulo="Editar Usuário")
 
 
+@users.route("/toggle/<int:user_id>", methods=["POST"])
+@debug_login_optional
+def toggle_user(user_id: int):
+    # Somente admin pode ativar/desativar
+    if not current_user.is_authenticated or current_user.cargo != "admin":
+        abort(403)
+    usuario = extensions.users_db.query(User).get(user_id)
+    if usuario is None:
+        abort(404)
+    # Evitar desativar a si mesmo, opcional
+    if usuario.id == getattr(current_user, "id", None):
+        flash("Você não pode desativar seu próprio usuário.", "warning")
+        return redirect(url_for("users.listar_usuarios"))
+    try:
+        usuario.is_active = not bool(usuario.is_active)
+        extensions.users_db.commit()
+        flash(
+            ("Usuário ativado." if usuario.is_active else "Usuário desativado."),
+            "success",
+        )
+    except Exception:
+        extensions.users_db.rollback()
+        flash("Falha ao alterar status do usuário.", "danger")
+    return redirect(url_for("users.listar_usuarios"))
+
+
 @users.route("/excluir/<int:user_id>", methods=["POST"])
 @debug_login_optional
-def delete_user(user_id: int) -> str:
+def delete_user(user_id: int):
     admin_required()
     user_to_delete = extensions.users_db.query(User).get(user_id)
     if user_to_delete is None:
@@ -211,7 +238,7 @@ def delete_user(user_id: int) -> str:
 
 @users.route("/perfil", methods=["GET", "POST"])
 @debug_login_optional
-def meu_perfil() -> str:
+def meu_perfil():
     usuario = extensions.users_db.query(User).get(current_user.id)
 
     # Inicializa o formulário com os dados do usuário

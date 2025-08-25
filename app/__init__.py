@@ -40,7 +40,10 @@ def create_app() -> Flask:
     instance_path = os.path.abspath(os.path.join(app.root_path, "..", "instance"))
 
     # Configuração dos bancos de dados separados
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///app.db")
+    # Use instance folder for the main app.db to keep all DBs under instance
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+        "DATABASE_URL", f"sqlite:///{os.path.join(instance_path, 'app.db')}"
+    )
     app.config["USERS_DATABASE_URI"] = os.environ.get(
         "USERS_DATABASE_URI", f"sqlite:///{os.path.join(instance_path, 'users.db')}"
     )
@@ -56,6 +59,10 @@ def create_app() -> Flask:
         "RECEITAS_DATABASE_URI",
         f"sqlite:///{os.path.join(instance_path, 'receitas.db')}",
     )
+    app.config["CALENDARIO_DATABASE_URI"] = os.environ.get(
+        "CALENDARIO_DATABASE_URI",
+        f"sqlite:///{os.path.join(instance_path, 'calendario.db')}",
+    )
 
     # Inicializa extensões
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -64,6 +71,7 @@ def create_app() -> Flask:
         "pacientes": app.config["PACIENTES_DATABASE_URI"],
         "tratamentos": app.config["TRATAMENTOS_DATABASE_URI"],
         "receitas": app.config["RECEITAS_DATABASE_URI"],
+        "calendario": app.config["CALENDARIO_DATABASE_URI"],
     }
 
     # Disable CSRF protection completely
@@ -120,6 +128,8 @@ def create_app() -> Flask:
         app.register_blueprint(agenda_bp, url_prefix="/agenda")
         with app.app_context():
             try:
+                # Create default-bind tables (e.g., app_settings in app.db)
+                # Calendar-related tables are managed via one-off migration script and not on startup
                 agenda_db.create_all()
             except Exception:
                 pass
