@@ -68,6 +68,7 @@ def gerar_documento(tipo_documento: str) -> ResponseReturnValue:
 
         # Buscar todos os dentistas ativos
         from app.extensions import db as _db
+
         dentistas = (
             User.query.filter_by(cargo="dentista")
             .filter(User.is_active_db == _db.true())

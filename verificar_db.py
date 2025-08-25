@@ -17,10 +17,11 @@ Saída (resumo por banco):
 """
 
 from __future__ import annotations
-import os
-import sys
+
 import glob
+import os
 import sqlite3
+import sys
 from typing import List, Tuple
 
 
@@ -52,9 +53,7 @@ def fetch_tables(conn: sqlite3.Connection) -> List[str]:
 
 
 def fetch_views(conn: sqlite3.Connection) -> List[str]:
-    cur = conn.execute(
-        "SELECT name FROM sqlite_master WHERE type='view' ORDER BY name;"
-    )
+    cur = conn.execute("SELECT name FROM sqlite_master WHERE type='view' ORDER BY name;")
     return [r[0] for r in cur.fetchall()]
 
 
@@ -144,7 +143,7 @@ def describe_database(db_path: str) -> None:
             fks = fetch_foreign_keys(conn, t)
             if fks:
                 print("    chaves estrangeiras:")
-                for (_id, _seq, ref_table, frm, to, on_upd, on_del, match) in fks:
+                for _id, _seq, ref_table, frm, to, on_upd, on_del, match in fks:
                     extras = []
                     if on_upd and on_upd.upper() != "NO ACTION":
                         extras.append(f"ON UPDATE {on_upd}")
@@ -153,22 +152,18 @@ def describe_database(db_path: str) -> None:
                     if match and match.upper() != "NONE":
                         extras.append(f"MATCH {match}")
                     extra = f" ({'; '.join(extras)})" if extras else ""
-                    print(
-                        f"      - {frm} -> {ref_table}({to}){extra}"
-                    )
+                    print(f"      - {frm} -> {ref_table}({to}){extra}")
             else:
                 print("    chaves estrangeiras: nenhuma")
 
             idxs = fetch_indices(conn, t)
             if idxs:
                 print("    índices:")
-                for (_seq, idx_name, unique, origin, partial) in idxs:
+                for _seq, idx_name, unique, origin, partial in idxs:
                     cols_info = fetch_index_info(conn, idx_name)
                     cols_list = ", ".join([cname for (_s, _cid, cname) in cols_info]) or "?"
                     uniq = "unique" if unique else "normal"
-                    print(
-                        f"      - {idx_name} ({uniq}) colunas: {cols_list}"
-                    )
+                    print(f"      - {idx_name} ({uniq}) colunas: {cols_list}")
             else:
                 print("    índices: nenhum")
 

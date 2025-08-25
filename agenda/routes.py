@@ -585,11 +585,7 @@ def listar_dentistas():
                 if "cargo" in cols:
                     conditions.append("cargo IN ('dentista','admin')")
                 where = (" WHERE " + " AND ".join(conditions)) if conditions else ""
-                q = (
-                    "SELECT "
-                    f"{', '.join(sel_cols)} "
-                    f"FROM users{where} ORDER BY {name_col}"
-                )
+                q = "SELECT " f"{', '.join(sel_cols)} " f"FROM users{where} ORDER BY {name_col}"
                 cur.execute(q)
                 for r in cur.fetchall():
                     did = r[0]

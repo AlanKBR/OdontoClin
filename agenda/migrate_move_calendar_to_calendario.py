@@ -8,6 +8,7 @@ Usage (from repo root or this folder):
 or
   python agenda/migrate_move_calendar_to_calendario.py
 """
+
 from __future__ import annotations
 
 import os

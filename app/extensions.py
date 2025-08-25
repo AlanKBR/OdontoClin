@@ -1,7 +1,8 @@
+from typing import Any
+
 from flask_login import LoginManager
 from flask_mobility import Mobility
 from flask_sqlalchemy import SQLAlchemy
-from typing import Any
 
 # Definição das extensões
 db = SQLAlchemy()

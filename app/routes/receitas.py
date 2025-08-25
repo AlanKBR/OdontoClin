@@ -30,9 +30,8 @@ def nova_receita():
 
     # Somente dentistas ativos
     from app.extensions import db as _db
-    dentistas = (
-        User.query.filter_by(cargo="dentista").filter(User.is_active_db == _db.true()).all()
-    )
+
+    dentistas = User.query.filter_by(cargo="dentista").filter(User.is_active_db == _db.true()).all()
     clinica = Clinica.get_instance()
     return render_template(
         "receitas/formulario_receita.html",
@@ -299,6 +298,7 @@ def obter_dados_dentista_receita(dentista_id: int):
     """API para obter dados básicos do dentista para uso em receitas."""
     try:
         from app.extensions import db as _db
+
         dentista = (
             User.query.filter_by(id=dentista_id, cargo="dentista")
             .filter(User.is_active_db == _db.true())
