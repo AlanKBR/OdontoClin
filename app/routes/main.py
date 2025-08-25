@@ -41,12 +41,12 @@ class ClinicaForm(FlaskForm):
 @main.route("/")
 def index() -> ResponseReturnValue:
     if current_user.is_authenticated:
-        return redirect(url_for("main.dashboard"))
-    # Em modo debug, redireciona direto para dashboard (login automático acontecerá lá)
+        return redirect(url_for("agenda.index"))
+    # Em modo debug, redireciona direto para a Agenda (login automático acontecerá lá)
     from flask import current_app
 
     if current_app.debug:
-        return redirect(url_for("main.dashboard"))
+        return redirect(url_for("agenda.index"))
     return redirect(url_for("auth.login"))
 
 
